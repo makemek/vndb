@@ -4,9 +4,14 @@
   "description": "A wrapper for VNDB API",
   "main": "index.js",
   "dependencies": {},
-  "devDependencies": {},
+  "devDependencies": {
+    "eslint": "^2.6.0",
+    "eslint-config-airbnb": "^6.2.0"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "esw lib",
+    "lint:watch": "esw -w lib"
   },
   "author": "Permagate",
   "license": "MIT"

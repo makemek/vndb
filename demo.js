@@ -7,13 +7,49 @@ const _print = (identifier, obj) => {
   console.log(util.inspect(obj, false, null));
 };
 
-const client1 = vndb.createClient();
-client1.login().then(data => _print('login', data), err => _print('login', err));
-client1.dbstats().then(data => _print('dbstats', data), err => _print('dbstats', err));
-client1.execute('get vn basic,details (id >= 1)').then(data => _print('raw-vn', data), err => _print('raw-vn', err));
-client1.get('vn', ['basic', 'details'], 'id >= 1', { results: 3 }).then(data => _print('vn', data), err => _print('vn', err));
-client1.get('release', ['basic', 'details'], 'id >= 1', { results: 3 }).then(data => _print('release', data), err => _print('release', err));
-client1.get('producer', ['basic', 'details'], 'id >= 1', { results: 3 }).then(data => _print('producer', data), err => _print('producer', err));
-client1.get('character', ['basic', 'details'], 'id >= 1', { results: 3 }).then(data => _print('character', data), err => _print('character', err));
+// Start connection
+const client = vndb.createClient();
 
-client1.finish();
+// Login
+client.login()
+  .then(data => _print('login', data))
+  .catch(err => _print('login', err));
+
+// Get dbstats
+client.dbstats()
+  .then(data => _print('dbstats', data))
+  .catch(err => _print('dbstats', err));
+
+// Get any
+client.get({
+  type: 'vn',
+  flags: ['basic', 'details'],
+  filters: 'id >= 1',
+  results: 1,
+}).then(data => _print('get', data))
+  .catch(err => _print('get', err));
+
+// Get vn
+client.vn({ results: 1 })
+  .then(data => _print('vn', data))
+  .catch(err => _print('vn', err));
+
+// Get release
+client.release({ results: 1 })
+  .then(data => _print('release', data))
+  .catch(err => _print('release', err));
+
+// Get producer
+client.producer({ results: 1 })
+  .then(data => _print('producer', data))
+  .catch(err => _print('producer', err));
+
+// Get character
+client.character({ results: 1 })
+  .then(data => _print('character', data))
+  .catch(err => _print('character', err));
+
+// End connection
+client.finish()
+  .then(() => console.log('Demo finished!'))
+  .catch(err => console.error(err));

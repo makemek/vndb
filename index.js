@@ -1,5 +1,3 @@
-'use strict';
-
 const vndb = {};
 
 // Default Configuration

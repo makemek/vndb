@@ -1,4 +1,4 @@
-'use strict';
+/* eslint-disable */
 const util = require('util');
 const vndb = require('./index');
 

@@ -1,31 +1,31 @@
 const expect = require('chai').expect;
 const vndb = require('../../index');
 
-describe('Connection with vndb', () => {
+describe('Connection commands', () => {
   beforeEach(function() {
-    this.client = vndb.createClient();
+    this.testedClient = vndb.createClient();
   });
 
   afterEach(function* () {
-    yield this.client.finish();
+    yield this.testedClient.finish();
   });
 
-  describe('login command', () => {
+  describe('login', () => {
     describe('without username nor password', () => {
       it('should return ok', function* () {
-        const result = yield this.client.login();
+        const result = yield this.testedClient.login();
 
         expect(result).to.have.property('type', 'ok');
       });
     });
   });
 
-  describe('finish command', () => {
+  describe('finish', () => {
     it('should return ok', function* () {
-      const spy = this.sandbox.spy(this.client, 'end');
+      const spy = this.sandbox.spy(this.testedClient, 'end');
 
-      yield this.client.login();
-      yield this.client.finish();
+      yield this.testedClient.login();
+      yield this.testedClient.finish();
 
       expect(spy).to.have.been.called;
     });

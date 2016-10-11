@@ -4,15 +4,21 @@ const sinonChai = require('sinon-chai');
 const vndb = require('../../index.js');
 require('co-mocha');
 
-before(function() {
+before(function* () {
   chai.use(sinonChai);
+  this.client = vndb.createClient();
+  yield this.client.login();
 });
 
-beforeEach(function() {
+after(function* () {
+  yield this.client.finish();
+});
+
+beforeEach(function* () {
   this.sandbox = sinon.sandbox.create();
 });
 
-afterEach(function() {
+afterEach(function* () {
   this.sandbox.restore();
 });
 

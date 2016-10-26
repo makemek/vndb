@@ -14,11 +14,11 @@ after(function* () {
   yield this.client.finish();
 });
 
-beforeEach(function* () {
+beforeEach(function () {
   this.sandbox = sinon.sandbox.create();
 });
 
-afterEach(function* () {
+afterEach(function () {
   this.sandbox.restore();
 });
 

@@ -1,6 +1,5 @@
 const expect = require('chai').expect;
 const joi = require('joi');
-const vndb = require('../../index');
 
 describe('Get commands', () => {
   beforeEach(function() {
@@ -77,7 +76,7 @@ describe('Get commands', () => {
             }),
           },
         };
-        
+
         const data1 = yield this.client.vn();
         const result1 = joi.validate(data1, schema, { allowUnknown: true });
         expect(result1.error).to.equal(null);
@@ -106,7 +105,7 @@ describe('Get commands', () => {
     describe('page', () => {
       it('should paginate the results', function* () {
         const firstTen = (yield this.client.vn({ results: 10, page: 1 })).data.items;
-        const inFirstTen = (item) => firstTen.find(i => i.id === item.id);
+        const inFirstTen = item => firstTen.find(i => i.id === item.id);
 
         const firstSix = (yield this.client.vn({ results: 6, page: 1 })).data.items;
         expect(firstSix.filter(inFirstTen).length).to.equal(6);
@@ -119,12 +118,12 @@ describe('Get commands', () => {
     describe('sort', () => {
       it('should sort the results', function* () {
         const sortedItems = (yield this.client.vn({
-          sort: 'rating'
+          sort: 'rating',
         })).data.items;
 
-        const isHigherThanBefore = (item, idx) => idx > 0 ?
-          sortedItems[idx - 1].rating <= sortedItems[idx].rating :
-          true;
+        const isHigherThanBefore = (item, idx) => {
+          return idx > 0 ? sortedItems[idx - 1].rating <= sortedItems[idx].rating : true;
+        };
 
         expect(sortedItems.every(isHigherThanBefore)).to.equal(true);
       });
@@ -137,22 +136,22 @@ describe('Get commands', () => {
           reverse: true,
         })).data.items;
 
-        const isLowerThanBefore = (item, idx) => idx > 0 ?
-          sortedItems[idx - 1].rating >= sortedItems[idx].rating :
-          true;
+        const isLowerThanBefore = (item, idx) => {
+          return idx > 0 ? sortedItems[idx - 1].rating >= sortedItems[idx].rating : true;
+        };
 
         expect(sortedItems.every(isLowerThanBefore)).to.equal(true);
       });
 
-      describe.only('without sort', () => {
+      describe('without sort', () => {
         it('should sort by default sort (id) descendingly', function* () {
           const sortedItems = (yield this.client.vn({
             reverse: true,
           })).data.items;
 
-          const isLowerThanBefore = (item, idx) => idx > 0 ?
-            sortedItems[idx - 1].id >= sortedItems[idx].id :
-            true;
+          const isLowerThanBefore = (item, idx) => {
+            return idx > 0 ? sortedItems[idx - 1].id >= sortedItems[idx].id : true;
+          };
 
           expect(sortedItems.every(isLowerThanBefore)).to.equal(true);
         });

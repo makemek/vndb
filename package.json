@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "A wrapper for VNDB API",
   "main": "index.js",
+  "engines": {
+    "node": "^6.0.0"
+  },
   "dependencies": {},
   "devDependencies": {
     "chai": "^3.5.0",
@@ -25,5 +28,10 @@
     "test:watch": "nodemon --exec 'npm run --silent test || true'"
   },
   "author": "Permagate",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Permagate/vndb"
+  },
+  "bugs": "https://github.com/Permagate/vndb/issues"
 }

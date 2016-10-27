@@ -22,9 +22,9 @@
     "sinon-chai": "^2.8.0"
   },
   "scripts": {
-    "test": "mocha",
     "lint": "eslint .",
     "lint:watch": "nodemon --exec 'npm run --silent lint || true'",
+    "test": "mocha",
     "test:watch": "nodemon --exec 'npm run --silent test || true'"
   },
   "author": "Permagate",

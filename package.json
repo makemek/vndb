@@ -24,8 +24,10 @@
   "scripts": {
     "lint": "eslint .",
     "lint:watch": "nodemon --exec 'npm run --silent lint || true'",
-    "test": "mocha",
-    "test:watch": "nodemon --exec 'npm run --silent test || true'"
+    "test": "mocha test/unit/index.js test/unit/**/*.js",
+    "test:watch": "nodemon --exec 'npm run --silent test || true'",
+    "test-integration": "mocha test/integration/index.js test/integration/**/*.js", 
+    "test-integration:watch": "nodemon --exec 'npm run --silent test-integration || true'"
   },
   "author": "Permagate",
   "license": "MIT",

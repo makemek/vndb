@@ -1,3 +1,2 @@
-test/**/index.js
-test/**/*.js
+test/index.js
 

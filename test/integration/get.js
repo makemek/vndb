@@ -1,13 +1,21 @@
 const expect = require('chai').expect;
+const vndb = require('../../index.js');
 
 describe('Get commands', () => {
-  beforeEach(function() {
+  before(function* () {
+    this.client = vndb.createClient();
+    yield this.client.login();
+
     this.validateCommonSchema = (data) => {
       expect(data).to.have.deep.property('type', 'results');
       expect(data).to.have.deep.property('data.more').that.is.a('boolean');
       expect(data).to.have.deep.property('data.num').that.is.a('number');
       expect(data).to.have.deep.property('data.items').that.all.have.property('id');
     };
+  });
+
+  after(function* () {
+    yield this.client.finish();
   });
 
   describe('vn', () => {

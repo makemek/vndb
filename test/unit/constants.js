@@ -4,27 +4,27 @@ const VNDBConstants = require('../../lib/constants');
 describe('VNDB constants', () => {
   describe('Server constants', () => {
     it('should contain VNDB API host and port', () => {
-      expect(VNDBConstants).to.have.deep.property('defaultConfig.server.host');
-      expect(VNDBConstants).to.have.deep.property('defaultConfig.server.port');
+      expect(VNDBConstants).to.have.deep.property('defaultConfig.host');
+      expect(VNDBConstants).to.have.deep.property('defaultConfig.port');
     });
 
     it('should default to use TLS port', () => {
-      expect(VNDBConstants).to.have.deep.property('defaultConfig.server.port', 19535);
+      expect(VNDBConstants).to.have.deep.property('defaultConfig.port', 19535);
     });
   });
 
   describe('Login constants', () => {
     it('should contain default login properties', () => {
-      expect(VNDBConstants).to.have.deep.property('defaultConfig.login.protocol');
-      expect(VNDBConstants).to.have.deep.property('defaultConfig.login.client');
-      expect(VNDBConstants).to.have.deep.property('defaultConfig.login.clientver');
-      expect(VNDBConstants).to.have.deep.property('defaultConfig.login.username');
-      expect(VNDBConstants).to.have.deep.property('defaultConfig.login.password');
+      expect(VNDBConstants).to.have.deep.property('defaultConfig.protocol');
+      expect(VNDBConstants).to.have.deep.property('defaultConfig.client');
+      expect(VNDBConstants).to.have.deep.property('defaultConfig.clientver');
+      expect(VNDBConstants).to.have.deep.property('defaultConfig.username');
+      expect(VNDBConstants).to.have.deep.property('defaultConfig.password');
     });
 
     it('should not define truthy username and password', () => {
-      expect(VNDBConstants.defaultConfig.login.username).to.not.exist;
-      expect(VNDBConstants.defaultConfig.login.password).to.not.exist;
+      expect(VNDBConstants.defaultConfig.username).to.not.exist;
+      expect(VNDBConstants.defaultConfig.password).to.not.exist;
     });
   });
 });

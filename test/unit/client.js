@@ -1,4 +1,5 @@
 const { expect } = require('chai');
+const tls = require('tls');
 const VNDBClient = require('../../lib/client');
 const { defaultConfig } = require('../../lib/constants');
 
@@ -36,6 +37,17 @@ describe('VNDBClient', () => {
 
       it('should override other configs using third argument', function() {
         expect(this.client.config.host).to.equal('test.org');
+      });
+    });
+
+    it('should call tls.connect and attach the function result to .socket', function() {
+      this.sandbox.stub(tls, 'connect').returns('a socket');
+      this.client = new VNDBClient();
+
+      expect(this.client.socket).to.equal('a socket');
+      expect(tls.connect).to.have.been.calledWith({
+        host: defaultConfig.host,
+        port: defaultConfig.port,
       });
     });
   });

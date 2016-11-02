@@ -14,15 +14,10 @@ describe('VNDBClient', () => {
     });
 
     describe('with 1 argument', () => {
-      it('should be configured with default config merged with the argument', () => {
-        const overrideConfig = {
-          server: {
-            host: 'test.org',
-          },
-        };
-        const client = new VNDBClient(overrideConfig);
+      it('should be used to override default config', () => {
+        const client = new VNDBClient({ host: 'test.org' });
 
-        expect(client.config).to.deep.equal(Object.assign({}, defaultConfig, overrideConfig));
+        expect(client.config.host).to.equal('test.org');
       });
     });
   });

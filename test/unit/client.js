@@ -68,19 +68,21 @@ describe('VNDBClient', () => {
     });
 
     describe('when client state is new', () => {
-      it('should throw an error', function() {
+      it('should rejects an error', function (done) {
         this.client.state = this.client._states.new;
-        this.client.process.bind(this.client, 'hello');
 
-        expect(this.client.process).to.throw(Error);
+        const promise = this.client.process('hello');
+
+        expect(promise).to.eventually.be.rejectedWith(Error)
+          .and.notify(done);
       });
     });
 
     describe('when client state is idle', () => {
       beforeEach(function() {
-        this.client.write = this.sandbox.stub();
+        this.client.write = this.sandbox.stub().resolves('resolved');
         this.client.state = this.client._states.idle;
-        this.client.process('hello');
+        this.promise = this.client.process('hello');
       });
 
       it('should not queue the message', function() {
@@ -89,6 +91,29 @@ describe('VNDBClient', () => {
 
       it('should set client state to busy', function() {
         expect(this.client.state).to.equal(this.client._states.busy);
+      });
+
+      it('should call client.write with same argument', function() {
+        expect(this.client.write).to.have.been.calledWith('hello');
+      });
+
+      describe('and client.write is resolved', () => {
+        it('should resolve the same value', function (done) {
+          expect(this.promise).to.eventually.equal('resolved')
+            .and.notify(done);
+        });
+      });
+
+      describe('and client.write is rejected', () => {
+        it('should resolve the same value', function(done) {
+          this.client.write = this.sandbox.stub().rejects('rejected');
+          this.client.state = this.client._states.idle;
+
+          const promise = this.client.process('hello');
+
+          expect(promise).to.eventually.rejectedWith('rejected')
+            .and.notify(done);
+        });
       });
     });
 
@@ -102,11 +127,13 @@ describe('VNDBClient', () => {
     });
 
     describe('when client state is not recognized', () => {
-      it('should throw an error', function() {
+      it('should throw an error', function(done) {
         this.client.state = 'invalid';
-        this.client.process.bind(this.client, 'hello');
 
-        expect(this.client.process).to.throw(Error);
+        const promise = this.client.process('hello');
+
+        expect(promise).to.eventually.be.rejectedWith(Error)
+          .and.notify(done);
       });
     });
   });

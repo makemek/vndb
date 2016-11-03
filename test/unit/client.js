@@ -11,6 +11,7 @@ describe('VNDBClient', () => {
       expect(client._states).to.be.an('object');
       expect(client._defaults).to.deep.equal(defaults);
       expect(client.state).to.equal(client._states.new);
+      expect(client.queues).to.be.an('array').that.is.empty;
     });
 
     describe.skip('without any argument', () => {
@@ -56,6 +57,54 @@ describe('VNDBClient', () => {
       expect(tls.connect).to.have.been.calledWith({
         host: defaults.host,
         port: defaults.port,
+      });
+    });
+  });
+
+  describe('.write(message)', () => {
+    beforeEach(function() {
+      this.client = new VNDBClient();
+    });
+
+    describe('when client state is new', () => {
+      it('should throw an error', function() {
+        this.client.state = this.client._states.new;
+        this.client.write.bind(this.client, 'hello');
+
+        expect(this.client.write).to.throw(Error);
+      });
+    });
+
+    describe('when client state is idle', () => {
+      beforeEach(function() {
+        this.client.state = this.client._states.idle;
+        this.client.write('hello');
+      });
+
+      it('should not queue the message', function() {
+        expect(this.client.queues).not.to.contain('hello');
+      });
+
+      it('should set client state to busy', function() {
+        expect(this.client.state).to.equal(this.client._states.busy);
+      });
+    });
+
+    describe('when client state is busy', () => {
+      it('should queue the message', function() {
+        this.client.state = this.client._states.busy;
+        this.client.write('hello');
+
+        expect(this.client.queues).to.contain('hello');
+      });
+    });
+
+    describe('when client state is not recognized', () => {
+      it('should throw an error', function() {
+        this.client.state = 'invalid';
+        this.client.write.bind(this.client, 'hello');
+
+        expect(this.client.write).to.throw(Error);
       });
     });
   });

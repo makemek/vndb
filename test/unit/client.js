@@ -12,6 +12,7 @@ describe('VNDBClient', () => {
       expect(client._defaults).to.deep.equal(defaults);
       expect(client.state).to.equal(client._states.new);
       expect(client.queues).to.be.an('array').that.is.empty;
+      expect(client.socket).not.to.exist;
     });
 
     describe.skip('without any argument', () => {

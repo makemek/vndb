@@ -62,7 +62,7 @@ describe('VNDBClient', () => {
     });
   });
 
-  describe('.write(message)', () => {
+  describe('.process(message)', () => {
     beforeEach(function() {
       this.client = new VNDBClient();
     });
@@ -70,16 +70,17 @@ describe('VNDBClient', () => {
     describe('when client state is new', () => {
       it('should throw an error', function() {
         this.client.state = this.client._states.new;
-        this.client.write.bind(this.client, 'hello');
+        this.client.process.bind(this.client, 'hello');
 
-        expect(this.client.write).to.throw(Error);
+        expect(this.client.process).to.throw(Error);
       });
     });
 
     describe('when client state is idle', () => {
       beforeEach(function() {
+        this.client.write = this.sandbox.stub();
         this.client.state = this.client._states.idle;
-        this.client.write('hello');
+        this.client.process('hello');
       });
 
       it('should not queue the message', function() {
@@ -94,7 +95,7 @@ describe('VNDBClient', () => {
     describe('when client state is busy', () => {
       it('should queue the message', function() {
         this.client.state = this.client._states.busy;
-        this.client.write('hello');
+        this.client.process('hello');
 
         expect(this.client.queues).to.contain('hello');
       });
@@ -103,9 +104,9 @@ describe('VNDBClient', () => {
     describe('when client state is not recognized', () => {
       it('should throw an error', function() {
         this.client.state = 'invalid';
-        this.client.write.bind(this.client, 'hello');
+        this.client.process.bind(this.client, 'hello');
 
-        expect(this.client.write).to.throw(Error);
+        expect(this.client.process).to.throw(Error);
       });
     });
   });

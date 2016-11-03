@@ -86,7 +86,9 @@ describe('VNDBClient', () => {
       });
 
       it('should not queue the message', function() {
-        expect(this.client.queues).not.to.contain('hello');
+        expect(this.client.queues).not.to.contain.an.item.that.deep.equals({
+          message: 'hello',
+        });
       });
 
       it('should set client state to busy', function() {
@@ -118,11 +120,12 @@ describe('VNDBClient', () => {
     });
 
     describe('when client state is busy', () => {
-      it('should queue the message', function() {
+      it('should queue the message, resolve, and reject function', function() {
         this.client.state = this.client._states.busy;
         this.client.process('hello');
 
-        expect(this.client.queues).to.contain('hello');
+        expect(this.client.queues[0]).to.contain.keys('resolve', 'reject')
+          .and.have.property('message', 'hello');
       });
     });
 

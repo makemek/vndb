@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const tls = require('tls');
 const VNDBClient = require('../../lib/client');
-const { defaultConfig } = require('../../lib/constants');
+const { defaults } = require('../../lib/constants');
 
 describe('VNDBClient', () => {
   describe('constructor', () => {
@@ -9,7 +9,7 @@ describe('VNDBClient', () => {
       const client = new VNDBClient();
 
       expect(client._states).to.be.an('object');
-      expect(client._defaults).to.deep.equal(defaultConfig);
+      expect(client._defaults).to.deep.equal(defaults);
       expect(client.state).to.equal(client._states.new);
     });
 
@@ -17,8 +17,8 @@ describe('VNDBClient', () => {
       it('should be configured with a copy of default values', () => {
         const client = new VNDBClient();
 
-        expect(client.config).to.not.equal(defaultConfig);
-        expect(client.config).to.deep.equal(defaultConfig);
+        expect(client.config).to.not.equal(defaults);
+        expect(client.config).to.deep.equal(defaults);
       });
     });
 
@@ -54,8 +54,8 @@ describe('VNDBClient', () => {
 
       expect(this.client.socket).to.equal('a socket');
       expect(tls.connect).to.have.been.calledWith({
-        host: defaultConfig.host,
-        port: defaultConfig.port,
+        host: defaults.host,
+        port: defaults.port,
       });
     });
   });

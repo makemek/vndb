@@ -1,28 +1,121 @@
 const { expect } = require('chai');
+const EventEmitter = require('events');
 const tls = require('tls');
 const VNDBClient = require('../../lib/vndb-client');
-const { defaults } = require('../../lib/constants');
+const VNDBError = require('../../lib/vndb-error');
+const { defaults, terminator } = require('../../lib/constants');
 
 describe('VNDBClient', () => {
-  describe('constructor', () => {
-    beforeEach(() => {
-      this.client = new VNDBClient();
-    });
+  beforeEach(function() {
+    this.client = new VNDBClient();
+  });
 
-    it('should set default values from constants file', () => {
+  describe('constructor', () => {
+    it('should set default values from constants file', function() {
       expect(this.client._defaults).to.deep.equal(defaults);
     });
 
-    it('should initialize an empty queue', () => {
+    it('should initialize an empty queue', function() {
       expect(this.client.queues).to.be.an('array').that.is.empty;
     });
 
-    it('should initialize an empty socket', () => {
+    it('should initialize an empty socket', function() {
       expect(this.client.socket).not.to.exist;
+    });
+
+    it('should initialize a null bufferedResponse', function() {
+      expect(this.client.bufferedResponse).to.equal(null);
     });
   });
 
-  describe('.write(message)', () => {
+  describe.only('.write(message)', () => {
+    describe('when client.socket is not initialized yet', () => {
+      it('should throw an error', function() {
+        this.client.socket = null;
+
+        expect(this.client.write.bind(this.client, 'a message'))
+          .to.throw(Error);
+      });
+    });
+
+    describe('when client.bufferedResponse is not null', () => {
+      it('should throw an error', function() {
+        this.client.socket = new EventEmitter();
+        this.client.bufferedResponse = 'in-progre';
+
+        expect(this.client.write.bind(this.client, 'a message'))
+          .to.throw(Error);
+      });
+    });
+
+    beforeEach(function() {
+      this.client.socket = new EventEmitter();
+      this.client.socket.write = this.sandbox.stub();
+      this.promise = this.client.write('a message');
+    });
+
+    it('should call client.socket.write with same arg + terminator', function() {
+      expect(this.client.socket.write).to.have.been.calledWith(`a message${terminator}`);
+    });
+
+    it('should set client.bufferedResponse to an empty string', function() {
+      expect(this.client.bufferedResponse).to.equal('');
+    });
+
+    it('should register a handler to "data" event', function() {
+      expect(this.client.socket.listeners('data')).to.have.lengthOf(1);
+    });
+
+    describe('on handling "data" event', () => {
+      describe('when receiving a response that does not end with terminator character', () => {
+        it('should save the response in client.bufferedResponse in utf8 format', function() {
+          this.client.bufferedResponse = 'waiting for ';
+          this.client.socket.emit('data', Buffer.from('an unfinished response'));
+          expect(this.client.bufferedResponse).to.equal('waiting for an unfinished response');
+        });
+      });
+
+      describe('when receiving a response that ends with terminator character', () => {
+        function testCommonBehavior() {
+          it('should set client.bufferedResponse back to null', function() {
+            expect(this.client.bufferedResponse).to.equal(null);
+          });
+
+          it('should deregister the "data" event handler', function() {
+            expect(this.client.socket.listeners('data')).to.be.empty;
+          });
+        }
+
+        describe('and the final response does not begin with "error"', () => {
+          beforeEach(function() {
+            this.client.bufferedResponse = 'waiting for ';
+            this.client.socket.emit('data', Buffer.from(`nothing${terminator}`));
+          });
+
+          testCommonBehavior();
+
+          it('should resolve final response as utf8 string without the terminator', function(done) {
+            expect(this.promise).to.eventually.equal('waiting for nothing')
+              .and.notify(done);
+          });
+        });
+
+        describe('and the final response begins with "error"', () => {
+          beforeEach(function() {
+            this.client.bufferedResponse = 'error {"id": "parse", "msg": "parse er';
+            this.client.socket.emit('data', Buffer.from(`ror"}${terminator}`));
+            this.handleRejectedPromise(this.promise);
+          });
+
+          testCommonBehavior();
+
+          it('should rejects the final response as a VNDBError obejct', function(done) {
+            expect(this.promise).to.eventually.rejectedWith(VNDBError, 'parse error')
+              .and.notify(done);
+          });
+        });
+      });
+    });
   });
 
   describe('.exec(message)', () => {

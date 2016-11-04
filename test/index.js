@@ -14,6 +14,12 @@ before(function () {
 
 beforeEach(function () {
   this.sandbox = sinon.sandbox.create();
+
+  // When we expected a promise to be rejected,
+  // but we don't really care to handle the rejection,
+  // Call this function to prevent unwanted warning from popping up.
+  // Use this sparingly.
+  this.handleRejectedPromise = promise => promise.catch(e => e);
 });
 
 afterEach(function () {

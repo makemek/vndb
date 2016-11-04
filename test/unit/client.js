@@ -4,15 +4,6 @@ const VNDBClient = require('../../lib/vndb-client');
 const { defaults } = require('../../lib/constants');
 
 describe('VNDBClient', () => {
-  describe('._normalizeGetFlags(flags, defaultFlags)', () => {
-  });
-
-  describe('._normalizeGetFilters(filters, defaultFilters)', () => {
-  });
-
-  describe('._normalizeGetOptions(options, defaultOptions)', () => {
-  });
-
   describe('constructor', () => {
     beforeEach(() => {
       this.client = new VNDBClient();

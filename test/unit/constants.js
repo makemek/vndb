@@ -27,5 +27,11 @@ describe('VNDB constants', () => {
       expect(VNDBConstants.defaults.password).to.not.exist;
     });
   });
+
+  describe('Other constants', () => {
+    it('should have terminator', () => {
+      expect(VNDBConstants).to.have.deep.property('terminator');
+    });
+  });
 });
 

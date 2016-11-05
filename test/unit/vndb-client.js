@@ -466,6 +466,46 @@ describe('VNDBClient', () => {
   });
 
   describe('.end()', () => {
+    beforeEach(function() {
+      this.stubEnd = (isSuccessful) => {
+        this.client.socket = new EventEmitter();
+        this.client.socket.end = () => {};
+        this.sandbox.stub(this.client.socket, 'end', () => {
+          const emitEvent = isSuccessful ?
+            () => this.client.socket.emit('end') :
+            () => this.client.socket.emit('error', new Error());
+          setTimeout(emitEvent);
+        });
+      };
+
+      // Defaults to successful end
+      this.stubEnd(true);
+    });
+
+    it('should end the socket', function() {
+      this.client.end();
+
+      expect(this.client.socket.end).to.have.been.called;
+    });
+
+    describe('when end is successful', () => {
+      it('should resolve undefined', function(done) {
+        const promise = this.client.end();
+
+        expect(promise).to.eventually.equal(undefined)
+          .and.notify(done);
+      });
+    });
+
+    describe('when end is not successful', () => {
+      it('should resolve undefined', function(done) {
+        this.stubEnd(false);
+        const promise = this.client.end();
+
+        expect(promise).to.eventually.rejectedWith(Error)
+          .and.notify(done);
+      });
+    });
   });
 
   describe('.dbstats()', () => {

@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const EventEmitter = require('events');
+const sinon = require('sinon');
 const tls = require('tls');
 const VNDBClient = require('../../lib/vndb-client');
 const VNDBError = require('../../lib/vndb-error');
@@ -290,10 +291,177 @@ describe('VNDBClient', () => {
   });
 
   describe('.connect', () => {
+    beforeEach(function() {
+      // Helper to stub login execution
+      this.stubLogin = (isSuccessful) => {
+        if (this.client.exec.restore) this.client.exec.restore();
+        this.sandbox.stub(this.client, 'exec', () => {
+          const promise = new Promise((resolve, reject) => {
+            if (isSuccessful) resolve();
+            else reject(new VNDBError('generic', 'something happened'));
+          });
+          promise.catch(e => e);
+          return promise;
+        });
+      };
+
+      // Helper to stub tls.connect
+      this.stubConnect = (isSuccessful) => {
+        if (tls.connect.restore) tls.connect.restore();
+        this.sandbox.stub(tls, 'connect', () => {
+          const socket = new EventEmitter();
+          const eventName = isSuccessful ? 'connect' : 'error';
+
+          // Emit process/error on next cycle,
+          // So that the client has a chance to register their handlers to the socket.
+          setTimeout(() => socket.emit(eventName, new Error()));
+
+          return socket;
+        });
+      };
+
+      // Stub with successful connect and login by default
+      this.stubConnect(true);
+      this.stubLogin(true);
+    });
+
     describe('()', () => {
+      it('should connect using default configuration', function() {
+        this.client.connect();
+
+        expect(tls.connect).to.have.been.calledWith({
+          host: defaults.host,
+          port: defaults.port,
+        });
+      });
+
+      it('should login without username and password', function(done) {
+        this.client.connect();
+
+        setTimeout(() => {
+          expect(this.client.exec).not.to.have.been.calledWithMatch(
+            sinon.match(/"username":"testuser"/));
+          expect(this.client.exec).not.to.have.been.calledWithMatch(
+            sinon.match(/"password":"testpass"/));
+          done();
+        });
+      });
     });
 
     describe('(username, password, config)', () => {
+      it('should connect using overrided configuration', function() {
+        this.client.connect('testname', 'testpass', {
+          host: 'test.com',
+          client: 'myclient',
+        });
+
+        expect(tls.connect).to.have.been.calledWith({
+          host: 'test.com',
+          port: defaults.port,
+        });
+      });
+
+      it('should login with provided username and password', function(done) {
+        this.client.connect('testname', 'testpass');
+
+        setTimeout(() => {
+          expect(this.client.exec).to.have.been.calledWithMatch(
+            sinon.match(/"username":"testname"/));
+          expect(this.client.exec).to.have.been.calledWithMatch(
+            sinon.match(/"password":"testpass"/));
+          done();
+        });
+      });
+    });
+
+    describe('all args', () => {
+      describe('client is already connected', () => {
+        it('should throw error', function() {
+          this.client.socket = new EventEmitter();
+
+          expect(this.client.connect).to.throw(Error);
+        });
+      });
+
+      describe('failed to connect with tls', () => {
+        it('should reject an Error', function() {
+          this.stubConnect(false);
+          const promise = this.client.connect();
+
+          expect(promise).to.eventually.rejectedWith(Error);
+        });
+      });
+
+      describe('failed to login with VNDB API', () => {
+        it('should reject an Error', function() {
+          this.stubLogin(false);
+          const promise = this.client.connect();
+
+          expect(promise).to.eventually.rejectedWith(VNDBError);
+        });
+      });
+
+      describe('succeed to login with VNDB API', () => {
+        it('should resolve undefined', function() {
+          const promise = this.client.connect();
+          expect(promise).to.eventually.equal(undefined);
+        });
+      });
+
+      describe('on converting arguments to correct login message', () => {
+        function getLoginMessage(username, password, others = {}) {
+          // Mandatory login body
+          const loginBody = {
+            protocol: others.protocol || defaults.protocol,
+            client: others.client || defaults.client,
+            clientver: others.clientver || defaults.clientver,
+          };
+
+          // Optional login body
+          if (username) loginBody.username = username;
+          if (password) loginBody.password = password;
+
+          return `login ${JSON.stringify(loginBody)}`;
+        }
+
+        function testConnect(client, ...args) {
+          client.connect(...args);
+          const loginMessage = getLoginMessage(...args);
+          setTimeout(() => {
+            expect(client.exec).to.have.been.calledWith(loginMessage);
+          });
+        }
+
+        describe('with just default values (no override)', () => {
+          it('should parse correctly', function() {
+            testConnect(this.client);
+          });
+        });
+
+        describe('with providing username and password', () => {
+          it('should parse correctly', function() {
+            testConnect(this.client, 'testuser', 'testparams');
+          });
+        });
+
+        describe('with overriding config', () => {
+          it('should parse correctly', function() {
+            testConnect(this.client, null, null, {
+              client: 'test.com',
+              clientver: 1,
+            });
+          });
+        });
+
+        describe('with username, password, and override config', () => {
+          it('should parse correctly', function() {
+            testConnect(this.client, 'testuser', 'testparams', {
+              client: 'test.com',
+              clientver: 1,
+            });
+          });
+        });
+      });
     });
   });
 

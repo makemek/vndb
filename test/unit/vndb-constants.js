@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const VNDBConstants = require('../../lib/constants');
+const VNDBConstants = require('../../lib/vndb-constants');
 
 describe('VNDB constants', () => {
   describe('Server constants', () => {

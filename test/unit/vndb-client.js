@@ -3,7 +3,7 @@ const EventEmitter = require('events');
 const tls = require('tls');
 const VNDBClient = require('../../lib/vndb-client');
 const VNDBError = require('../../lib/vndb-error');
-const { defaults, terminator } = require('../../lib/constants');
+const { defaults, terminator } = require('../../lib/vndb-constants');
 const utils = require('../../lib/utils');
 
 describe('VNDBClient', () => {

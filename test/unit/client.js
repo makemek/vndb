@@ -4,6 +4,7 @@ const tls = require('tls');
 const VNDBClient = require('../../lib/vndb-client');
 const VNDBError = require('../../lib/vndb-error');
 const { defaults, terminator } = require('../../lib/constants');
+const utils = require('../../lib/utils');
 
 describe('VNDBClient', () => {
   beforeEach(function() {
@@ -28,7 +29,7 @@ describe('VNDBClient', () => {
     });
   });
 
-  describe.only('.write(message)', () => {
+  describe('.write(message)', () => {
     describe('when client.socket is not initialized yet', () => {
       it('should throw an error', function() {
         this.client.socket = null;
@@ -118,7 +119,175 @@ describe('VNDBClient', () => {
     });
   });
 
-  describe('.exec(message)', () => {
+  describe('.exec', function() {
+    beforeEach(function() {
+      this.bufferedResponse = null;
+      this.client.write = this.sandbox.stub().returns(new Promise(() => {}));
+    });
+
+    // A helper to generate this.client.queues randomly,
+    // since it expects its items in certain structure.
+    const generateQueue = (count = 1) => {
+      return Array(count).fill().map((_, i) => {
+        return {
+          message: `Message ${i}`,
+          promise: utils.createDeferredPromise(),
+        };
+      });
+    };
+
+    describe('()', () => {
+      describe('when client queues is empty', () => {
+        beforeEach(function() {
+          this.client.queues = generateQueue(0);
+        });
+
+        it('should resolve undefined', function(done) {
+          const result = this.client.exec();
+          expect(result).to.eventually.equal(undefined)
+            .and.notify(done);
+        });
+
+        it('should not call .write', function() {
+          this.client.exec();
+          expect(this.client.write).not.to.have.been.called;
+        });
+      });
+
+      describe('when client queues is not empty', () => {
+        beforeEach(function() {
+          this.client.queues = generateQueue(1);
+          this.itemToExec = this.client.queues[0];
+        });
+
+        it('should return the first item promise in client queues', function() {
+          const result = this.client.exec();
+          expect(result).to.equal(this.itemToExec.promise);
+        });
+
+        it('should call .write', function() {
+          this.client.exec();
+          expect(this.client.write).to.have.been.called;
+        });
+      });
+    });
+
+    describe('(message)', () => {
+      it('should call .write', function() {
+        this.client.exec('a message');
+        expect(this.client.write).to.have.been.called;
+      });
+
+      describe('when client queues is not empty', () => {
+        beforeEach(function() {
+          this.client.queues = generateQueue(2);
+          this.itemToExec = this.client.queues[0];
+        });
+
+        it('should queue the message into the last of client queues', function() {
+          this.client.exec('a message');
+          expect(this.client.queues[this.client.queues.length - 1]).to.have.property('message', 'a message');
+        });
+
+        it('should not call .write with the provided message', function() {
+          this.client.exec('a message');
+          expect(this.client.write).not.to.have.been.calledWith('a message');
+        });
+
+        it('should call .write with the first item message in queue', function() {
+          this.client.exec('a message');
+          expect(this.client.write).to.have.been.calledWith(this.itemToExec.message);
+        });
+
+        it('should return the first item promise in client queues', function() {
+          const result = this.client.exec();
+          expect(result).to.equal(this.itemToExec.promise);
+        });
+      });
+    });
+
+    describe('all args', () => {
+      beforeEach(function() {
+        this.client.queues = generateQueue(1);
+        this.itemToExec = this.client.queues[0];
+      });
+
+      describe('on executing message', () => {
+        describe('when client is idle', () => {
+          beforeEach(function() {
+            this.client.bufferedResponse = null;
+          });
+
+          it('should remove the first item in client queues', function() {
+            this.client.exec();
+            expect(this.client.queues)
+              .not.to.contain.an.item.with.property('message', this.itemToExec.message);
+          });
+
+          it('should execute the first item message in client queues', function() {
+            this.client.exec();
+            expect(this.client.write).to.have.been.calledWith(this.itemToExec.message);
+          });
+        });
+
+        describe('when client is busy', () => {
+          beforeEach(function() {
+            this.client.bufferedResponse = 'pending';
+          });
+
+          it('should not remove the first item in client queues', function() {
+            this.client.exec();
+            expect(this.client.queues)
+              .to.contain.an.item.with.property('message', this.itemToExec.message);
+          });
+
+          it('should not wite any message', function() {
+            this.client.exec();
+            expect(this.client.write).not.to.have.been.called;
+          });
+        });
+      });
+
+      describe('on handling client.write fulfillment', () => {
+        describe('on client.write promise resolved', () => {
+          beforeEach(function() {
+            this.client.write.resolves('write result');
+          });
+
+          it('should pipe the result into the processed item\'s promise.resolve', function(done) {
+            this.client.exec();
+            expect(this.itemToExec.promise).to.eventually.equal('write result')
+              .and.notify(done);
+          });
+
+          it('should call itself to process next message', function() {
+            this.sandbox.spy(this.client, 'exec');
+            this.client.exec().then(() => {
+              expect(this.client.exec).to.have.been.calledTwice;
+            });
+          });
+        });
+
+        describe('on client.write promise rejected', () => {
+          beforeEach(function() {
+            this.client.write.rejects('something wrong');
+          });
+
+          it('should pipe the result into the processed item\'s promise.reject', function(done) {
+            const promise = this.client.exec();
+            expect(promise).to.eventually.rejectedWith('something wrong')
+              .and.notify(done);
+          });
+
+          it('should call itself to process next message', function() {
+            this.sandbox.spy(this.client, 'exec');
+            this.client.exec().catch(() => {
+              expect(this.client.exec).to.have.been.calledTwice;
+            });
+          });
+        });
+      });
+    });
   });
 
   describe('.connect', () => {

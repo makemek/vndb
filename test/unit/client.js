@@ -105,7 +105,6 @@ describe('VNDBClient', () => {
           beforeEach(function() {
             this.client.bufferedResponse = 'error {"id": "parse", "msg": "parse er';
             this.client.socket.emit('data', Buffer.from(`ror"}${terminator}`));
-            this.handleRejectedPromise(this.promise);
           });
 
           testCommonBehavior();

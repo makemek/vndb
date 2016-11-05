@@ -509,6 +509,40 @@ describe('VNDBClient', () => {
   });
 
   describe('.dbstats()', () => {
+    beforeEach(function() {
+      this.sandbox.stub(this.client, 'exec')
+        .returns(new Promise(() => {}));
+    });
+
+    it('should execute correct message', function() {
+      this.client.dbstats();
+
+      expect(this.client.exec).to.have.been.calledWith('dbstats');
+    });
+
+    describe('when exec is successful', () => {
+      it('should resolve the response as correct object', function() {
+        this.client.exec.resolves('dbstats {"users":1000,"vn":2000}');
+        const promise = this.client.dbstats();
+
+        expect(promise).to.eventually.deep.equal({
+          type: 'dbstats',
+          data: {
+            users: 1000,
+            vn: 2000,
+          },
+        });
+      });
+    });
+
+    describe('when exec is failed', () => {
+      it('should rejects the error', function() {
+        this.client.exec.rejects(new VNDBError());
+        const promise = this.client.dbstats();
+
+        expect(promise).to.eventually.rejectedWith(VNDBError);
+      });
+    });
   });
 
   describe('.get', () => {

@@ -245,6 +245,19 @@ describe('VNDBClient', () => {
             this.client.exec();
             expect(this.client.write).not.to.have.been.called;
           });
+
+          it('should still return a promise', function() {
+            const promise = this.client.exec();
+            expect(promise).to.be.an.instanceof(Promise);
+          });
+
+          describe('and no items left in client queues', () => {
+            it('should resolve undefined', function() {
+              this.client.queues = generateQueue(0);
+              const promise = this.client.exec();
+              expect(promise).to.eventually.equal(undefined);
+            });
+          });
         });
       });
 

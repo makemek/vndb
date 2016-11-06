@@ -305,10 +305,12 @@ describe('VNDBClient', () => {
 
   describe('.connect', () => {
     beforeEach(function() {
+      this.client.exec = this.sandbox.stub();
+
       // Helper to stub login execution
       this.stubLogin = (isSuccessful) => {
-        if (this.client.exec.restore) this.client.exec.restore();
-        this.sandbox.stub(this.client, 'exec', () => {
+        if (this.client.write.restore) this.client.write.restore();
+        this.sandbox.stub(this.client, 'write', () => {
           const promise = new Promise((resolve, reject) => {
             if (isSuccessful) resolve();
             else reject(new VNDBError('generic', 'something happened'));
@@ -352,9 +354,9 @@ describe('VNDBClient', () => {
         this.client.connect();
 
         setTimeout(() => {
-          expect(this.client.exec).not.to.have.been.calledWithMatch(
+          expect(this.client.write).not.to.have.been.calledWithMatch(
             sinon.match(/"username":"testuser"/));
-          expect(this.client.exec).not.to.have.been.calledWithMatch(
+          expect(this.client.write).not.to.have.been.calledWithMatch(
             sinon.match(/"password":"testpass"/));
           done();
         });
@@ -378,9 +380,9 @@ describe('VNDBClient', () => {
         this.client.connect('testname', 'testpass');
 
         setTimeout(() => {
-          expect(this.client.exec).to.have.been.calledWithMatch(
+          expect(this.client.write).to.have.been.calledWithMatch(
             sinon.match(/"username":"testname"/));
-          expect(this.client.exec).to.have.been.calledWithMatch(
+          expect(this.client.write).to.have.been.calledWithMatch(
             sinon.match(/"password":"testpass"/));
           done();
         });
@@ -419,6 +421,13 @@ describe('VNDBClient', () => {
           const promise = this.client.connect();
           expect(promise).to.eventually.equal(undefined);
         });
+
+        it('should also start executing any queued messages', function() {
+          this.client.connect();
+          setTimeout(() => {
+            expect(this.client.exec).to.have.been.calledWith();
+          });
+        });
       });
 
       describe('on converting arguments to correct login message', () => {
@@ -441,7 +450,7 @@ describe('VNDBClient', () => {
           client.connect(...args);
           const loginMessage = getLoginMessage(...args);
           setTimeout(() => {
-            expect(client.exec).to.have.been.calledWith(loginMessage);
+            expect(client.write).to.have.been.calledWith(loginMessage);
           });
         }
 

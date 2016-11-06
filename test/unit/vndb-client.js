@@ -121,7 +121,9 @@ describe('VNDBClient', () => {
 
   describe('.exec', function() {
     beforeEach(function() {
-      this.bufferedResponse = null;
+      this.client.bufferedResponse = null;
+      this.client.socket = new EventEmitter();
+      this.client.socket.connecting = false;
       this.client.write = this.sandbox.stub().returns(new Promise(() => {}));
     });
 
@@ -230,11 +232,7 @@ describe('VNDBClient', () => {
           });
         });
 
-        describe('when client is busy', () => {
-          beforeEach(function() {
-            this.client.bufferedResponse = 'pending';
-          });
-
+        function testLazyExec() {
           it('should not remove the first item in client queues', function() {
             this.client.exec();
             expect(this.client.queues)
@@ -258,6 +256,30 @@ describe('VNDBClient', () => {
               expect(promise).to.eventually.equal(undefined);
             });
           });
+        }
+
+        describe('when client is busy', () => {
+          beforeEach(function() {
+            this.client.bufferedResponse = 'pending';
+          });
+
+          testLazyExec();
+        });
+
+        describe('when client has not connected yet', () => {
+          beforeEach(function() {
+            this.client.socket = null;
+          });
+
+          testLazyExec();
+        });
+
+        describe('when client is still connecting', () => {
+          beforeEach(function() {
+            this.client.socket.connecting = true;
+          });
+
+          testLazyExec();
         });
       });
 

@@ -10,6 +10,25 @@ const utils = require('../../lib/utils');
 describe('VNDBClient', () => {
   beforeEach(function() {
     this.client = new VNDBClient();
+
+    // Helper to stub tls.connect
+    this.stubConnect = (isSuccessful) => {
+      if (tls.connect.restore) tls.connect.restore();
+      this.sandbox.stub(tls, 'connect', () => {
+        const socket = new EventEmitter();
+        const eventName = isSuccessful ? 'connect' : 'error';
+
+        // Emit process/error on next cycle,
+        // So that the client has a chance to register their handlers to the socket.
+        setTimeout(() => socket.emit(eventName, new Error()));
+
+        return socket;
+      });
+    };
+
+    // Stub tls connect by default
+    // To prevent real call to VNDB API.
+    this.stubConnect(true);
   });
 
   describe('constructor', () => {
@@ -342,23 +361,7 @@ describe('VNDBClient', () => {
         });
       };
 
-      // Helper to stub tls.connect
-      this.stubConnect = (isSuccessful) => {
-        if (tls.connect.restore) tls.connect.restore();
-        this.sandbox.stub(tls, 'connect', () => {
-          const socket = new EventEmitter();
-          const eventName = isSuccessful ? 'connect' : 'error';
-
-          // Emit process/error on next cycle,
-          // So that the client has a chance to register their handlers to the socket.
-          setTimeout(() => socket.emit(eventName, new Error()));
-
-          return socket;
-        });
-      };
-
-      // Stub with successful connect and login by default
-      this.stubConnect(true);
+      // Stub with successful login by default
       this.stubLogin(true);
     });
 

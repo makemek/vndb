@@ -125,6 +125,7 @@ describe('VNDBClient', () => {
           beforeEach(function() {
             this.client.bufferedResponse = 'error {"id": "parse", "msg": "parse er';
             this.client.socket.emit('data', Buffer.from(`ror"}${terminator}`));
+            this.promise.catch(e => e);
           });
 
           testCommonBehavior();
@@ -433,24 +434,28 @@ describe('VNDBClient', () => {
       });
 
       describe('failed to login with VNDB API', () => {
-        it('should reject an Error', function() {
+        it('should reject an Error', function(done) {
           this.stubLogin(false);
           const promise = this.client.connect();
 
-          expect(promise).to.eventually.rejectedWith(VNDBError);
+          expect(promise).to.eventually.rejectedWith(VNDBError)
+            .and.notify(done);
         });
       });
 
       describe('succeed to login with VNDB API', () => {
         it('should resolve undefined', function() {
+          this.stubLogin(true);
           const promise = this.client.connect();
           expect(promise).to.eventually.equal(undefined);
         });
 
-        it('should also start executing any queued messages', function() {
-          this.client.connect();
-          setTimeout(() => {
+        it('should also start executing any queued messages', function(done) {
+          this.stubLogin(true);
+          this.client.connect().then(() => {
+            expect(this.client.exec).to.have.been.called;
             expect(this.client.exec).to.have.been.calledWith();
+            done();
           });
         });
       });
@@ -471,29 +476,30 @@ describe('VNDBClient', () => {
           return `login ${JSON.stringify(loginBody)}`;
         }
 
-        function testConnect(client, ...args) {
+        function testConnect(client, done, ...args) {
           client.connect(...args);
           const loginMessage = getLoginMessage(...args);
           setTimeout(() => {
             expect(client.write).to.have.been.calledWith(loginMessage);
+            done();
           });
         }
 
         describe('with just default values (no override)', () => {
-          it('should parse correctly', function() {
-            testConnect(this.client);
+          it('should parse correctly', function(done) {
+            testConnect(this.client, done);
           });
         });
 
         describe('with providing username and password', () => {
-          it('should parse correctly', function() {
-            testConnect(this.client, 'testuser', 'testparams');
+          it('should parse correctly', function(done) {
+            testConnect(this.client, done, 'testuser', 'testparams');
           });
         });
 
         describe('with overriding config', () => {
-          it('should parse correctly', function() {
-            testConnect(this.client, null, null, {
+          it('should parse correctly', function(done) {
+            testConnect(this.client, done, null, null, {
               client: 'test.com',
               clientver: 1,
             });
@@ -501,8 +507,8 @@ describe('VNDBClient', () => {
         });
 
         describe('with username, password, and override config', () => {
-          it('should parse correctly', function() {
-            testConnect(this.client, 'testuser', 'testparams', {
+          it('should parse correctly', function(done) {
+            testConnect(this.client, done, 'testuser', 'testparams', {
               client: 'test.com',
               clientver: 1,
             });

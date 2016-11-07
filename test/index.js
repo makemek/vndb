@@ -16,17 +16,7 @@ beforeEach(function () {
   this.sandbox = sinon.sandbox.create();
 });
 
-afterEach(function (done) {
-  // TODO: Remove setTimeout here.
-  //
-  // For some reasons, mocha is sometimes green, sometimes not.
-  // Usually if I test using splitted tmux screen, it's green. If full, it's read.
-  // Like what
-  //
-  // My hunch is because I'm messing with setTimeout here and in the tests
-  setTimeout(() => {
-    this.sandbox.verifyAndRestore();
-    done();
-  });
+afterEach(function () {
+  this.sandbox.restore();
 });
 

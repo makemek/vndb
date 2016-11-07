@@ -7,7 +7,7 @@ const VNDBError = require('../../lib/vndb-error');
 const { defaults, terminator } = require('../../lib/vndb-constants');
 const utils = require('../../lib/utils');
 
-describe('VNDBClient', () => {
+describe('VNDBClient', function() {
   beforeEach(function() {
     this.client = new VNDBClient();
 
@@ -31,7 +31,7 @@ describe('VNDBClient', () => {
     this.stubConnect(true);
   });
 
-  describe('constructor', () => {
+  describe('constructor', function() {
     it('should set default values from constants file', function() {
       expect(this.client._defaults).to.deep.equal(defaults);
     });
@@ -49,8 +49,8 @@ describe('VNDBClient', () => {
     });
   });
 
-  describe('.write(message)', () => {
-    describe('when client.socket is not initialized yet', () => {
+  describe('.write(message)', function() {
+    describe('when client.socket is not initialized yet', function() {
       it('should throw an error', function() {
         this.client.socket = null;
 
@@ -59,7 +59,7 @@ describe('VNDBClient', () => {
       });
     });
 
-    describe('when client.bufferedResponse is not null', () => {
+    describe('when client.bufferedResponse is not null', function() {
       it('should throw an error', function() {
         this.client.socket = new EventEmitter();
         this.client.bufferedResponse = 'in-progre';
@@ -87,8 +87,8 @@ describe('VNDBClient', () => {
       expect(this.client.socket.listeners('data')).to.have.lengthOf(1);
     });
 
-    describe('on handling "data" event', () => {
-      describe('when receiving a response that does not end with terminator character', () => {
+    describe('on handling "data" event', function() {
+      describe('when receiving a response that does not end with terminator character', function() {
         it('should save the response in client.bufferedResponse in utf8 format', function() {
           this.client.bufferedResponse = 'waiting for ';
           this.client.socket.emit('data', Buffer.from('an unfinished response'));
@@ -96,7 +96,7 @@ describe('VNDBClient', () => {
         });
       });
 
-      describe('when receiving a response that ends with terminator character', () => {
+      describe('when receiving a response that ends with terminator character', function() {
         function testCommonBehavior() {
           it('should set client.bufferedResponse back to null', function() {
             expect(this.client.bufferedResponse).to.equal(null);
@@ -107,7 +107,7 @@ describe('VNDBClient', () => {
           });
         }
 
-        describe('and the final response does not begin with "error"', () => {
+        describe('and the final response does not begin with "error"', function() {
           beforeEach(function() {
             this.client.bufferedResponse = 'waiting for ';
             this.client.socket.emit('data', Buffer.from(`nothing${terminator}`));
@@ -121,7 +121,7 @@ describe('VNDBClient', () => {
           });
         });
 
-        describe('and the final response begins with "error"', () => {
+        describe('and the final response begins with "error"', function() {
           beforeEach(function() {
             this.client.bufferedResponse = 'error {"id": "parse", "msg": "parse er';
             this.client.socket.emit('data', Buffer.from(`ror"}${terminator}`));
@@ -158,8 +158,8 @@ describe('VNDBClient', () => {
       });
     };
 
-    describe('()', () => {
-      describe('when client queues is empty', () => {
+    describe('()', function() {
+      describe('when client queues is empty', function() {
         beforeEach(function() {
           this.client.queues = generateQueue(0);
         });
@@ -176,7 +176,7 @@ describe('VNDBClient', () => {
         });
       });
 
-      describe('when client queues is not empty', () => {
+      describe('when client queues is not empty', function() {
         beforeEach(function() {
           this.client.queues = generateQueue(1);
           this.itemToExec = this.client.queues[0];
@@ -194,13 +194,13 @@ describe('VNDBClient', () => {
       });
     });
 
-    describe('(message)', () => {
+    describe('(message)', function() {
       it('should call .write', function() {
         this.client.exec('a message');
         expect(this.client.write).to.have.been.called;
       });
 
-      describe('when client queues is not empty', () => {
+      describe('when client queues is not empty', function() {
         beforeEach(function() {
           this.client.queues = generateQueue(2);
           this.itemToExec = this.client.queues[0];
@@ -228,14 +228,14 @@ describe('VNDBClient', () => {
       });
     });
 
-    describe('all args', () => {
+    describe('all args', function() {
       beforeEach(function() {
         this.client.queues = generateQueue(1);
         this.itemToExec = this.client.queues[0];
       });
 
-      describe('on executing message', () => {
-        describe('when client is idle', () => {
+      describe('on executing message', function() {
+        describe('when client is idle', function() {
           beforeEach(function() {
             this.client.bufferedResponse = null;
           });
@@ -269,7 +269,7 @@ describe('VNDBClient', () => {
             expect(promise).to.be.an.instanceof(Promise);
           });
 
-          describe('and no items left in client queues', () => {
+          describe('and no items left in client queues', function() {
             it('should resolve undefined', function() {
               this.client.queues = generateQueue(0);
               const promise = this.client.exec();
@@ -278,7 +278,7 @@ describe('VNDBClient', () => {
           });
         }
 
-        describe('when client is busy', () => {
+        describe('when client is busy', function() {
           beforeEach(function() {
             this.client.bufferedResponse = 'pending';
           });
@@ -286,7 +286,7 @@ describe('VNDBClient', () => {
           testLazyExec();
         });
 
-        describe('when client has not connected yet', () => {
+        describe('when client has not connected yet', function() {
           beforeEach(function() {
             this.client.socket = null;
           });
@@ -294,7 +294,7 @@ describe('VNDBClient', () => {
           testLazyExec();
         });
 
-        describe('when client is still connecting', () => {
+        describe('when client is still connecting', function() {
           beforeEach(function() {
             this.client.socket.connecting = true;
           });
@@ -303,8 +303,8 @@ describe('VNDBClient', () => {
         });
       });
 
-      describe('on handling client.write fulfillment', () => {
-        describe('on client.write promise resolved', () => {
+      describe('on handling client.write fulfillment', function() {
+        describe('on client.write promise resolved', function() {
           beforeEach(function() {
             this.client.write.resolves('write result');
           });
@@ -323,7 +323,7 @@ describe('VNDBClient', () => {
           });
         });
 
-        describe('on client.write promise rejected', () => {
+        describe('on client.write promise rejected', function() {
           beforeEach(function() {
             this.client.write.rejects('something wrong');
           });
@@ -345,7 +345,7 @@ describe('VNDBClient', () => {
     });
   });
 
-  describe('.connect', () => {
+  describe('.connect', function() {
     beforeEach(function() {
       this.client.exec = this.sandbox.stub();
 
@@ -366,7 +366,7 @@ describe('VNDBClient', () => {
       this.stubLogin(true);
     });
 
-    describe('()', () => {
+    describe('()', function() {
       it('should connect using default configuration', function() {
         this.client.connect();
 
@@ -389,7 +389,7 @@ describe('VNDBClient', () => {
       });
     });
 
-    describe('(username, password, config)', () => {
+    describe('(username, password, config)', function() {
       it('should connect using overrided configuration', function() {
         this.client.connect('testname', 'testpass', {
           host: 'test.com',
@@ -415,8 +415,8 @@ describe('VNDBClient', () => {
       });
     });
 
-    describe('all args', () => {
-      describe('client is already connected', () => {
+    describe('all args', function() {
+      describe('client is already connected', function() {
         it('should throw error', function() {
           this.client.socket = new EventEmitter();
 
@@ -424,7 +424,7 @@ describe('VNDBClient', () => {
         });
       });
 
-      describe('failed to connect with tls', () => {
+      describe('failed to connect with tls', function() {
         it('should reject an Error', function() {
           this.stubConnect(false);
           const promise = this.client.connect();
@@ -433,7 +433,7 @@ describe('VNDBClient', () => {
         });
       });
 
-      describe('failed to login with VNDB API', () => {
+      describe('failed to login with VNDB API', function() {
         it('should reject an Error', function(done) {
           this.stubLogin(false);
           const promise = this.client.connect();
@@ -443,7 +443,7 @@ describe('VNDBClient', () => {
         });
       });
 
-      describe('succeed to login with VNDB API', () => {
+      describe('succeed to login with VNDB API', function() {
         it('should resolve undefined', function() {
           this.stubLogin(true);
           const promise = this.client.connect();
@@ -460,7 +460,7 @@ describe('VNDBClient', () => {
         });
       });
 
-      describe('on converting arguments to correct login message', () => {
+      describe('on converting arguments to correct login message', function() {
         function getLoginMessage(username, password, others = {}) {
           // Mandatory login body
           const loginBody = {
@@ -485,19 +485,19 @@ describe('VNDBClient', () => {
           });
         }
 
-        describe('with just default values (no override)', () => {
+        describe('with just default values (no override)', function() {
           it('should parse correctly', function(done) {
             testConnect(this.client, done);
           });
         });
 
-        describe('with providing username and password', () => {
+        describe('with providing username and password', function() {
           it('should parse correctly', function(done) {
             testConnect(this.client, done, 'testuser', 'testparams');
           });
         });
 
-        describe('with overriding config', () => {
+        describe('with overriding config', function() {
           it('should parse correctly', function(done) {
             testConnect(this.client, done, null, null, {
               client: 'test.com',
@@ -506,7 +506,7 @@ describe('VNDBClient', () => {
           });
         });
 
-        describe('with username, password, and override config', () => {
+        describe('with username, password, and override config', function() {
           it('should parse correctly', function(done) {
             testConnect(this.client, done, 'testuser', 'testparams', {
               client: 'test.com',
@@ -518,7 +518,7 @@ describe('VNDBClient', () => {
     });
   });
 
-  describe('.end()', () => {
+  describe('.end()', function() {
     beforeEach(function() {
       this.stubEnd = (isSuccessful) => {
         this.client.socket = new EventEmitter();
@@ -541,7 +541,7 @@ describe('VNDBClient', () => {
       expect(this.client.socket.end).to.have.been.called;
     });
 
-    describe('when end is successful', () => {
+    describe('when end is successful', function() {
       it('should resolve undefined', function(done) {
         const promise = this.client.end();
 
@@ -550,7 +550,7 @@ describe('VNDBClient', () => {
       });
     });
 
-    describe('when end is not successful', () => {
+    describe('when end is not successful', function() {
       it('should resolve undefined', function(done) {
         this.stubEnd(false);
         const promise = this.client.end();
@@ -561,7 +561,7 @@ describe('VNDBClient', () => {
     });
   });
 
-  describe('.dbstats()', () => {
+  describe('.dbstats()', function() {
     beforeEach(function() {
       this.sandbox.stub(this.client, 'exec')
         .returns(new Promise(() => {}));
@@ -573,7 +573,7 @@ describe('VNDBClient', () => {
       expect(this.client.exec).to.have.been.calledWith('dbstats');
     });
 
-    describe('when exec is successful', () => {
+    describe('when exec is successful', function() {
       it('should resolve the response as correct object', function() {
         this.client.exec.resolves('dbstats {"users":1000,"vn":2000}');
         const promise = this.client.dbstats();
@@ -588,7 +588,7 @@ describe('VNDBClient', () => {
       });
     });
 
-    describe('when exec is failed', () => {
+    describe('when exec is failed', function() {
       it('should rejects the error', function() {
         this.client.exec.rejects(new VNDBError());
         const promise = this.client.dbstats();
@@ -598,75 +598,75 @@ describe('VNDBClient', () => {
     });
   });
 
-  describe('.get', () => {
-    describe('(type)', () => {
+  describe('.get', function() {
+    describe('(type)', function() {
     });
 
-    describe('(type, flags, filters, options)', () => {
-    });
-  });
-
-  describe('.vn', () => {
-    describe('()', () => {
-    });
-
-    describe('(flags, filters, options)', () => {
+    describe('(type, flags, filters, options)', function() {
     });
   });
 
-  describe('.release', () => {
-    describe('()', () => {
+  describe('.vn', function() {
+    describe('()', function() {
     });
 
-    describe('(flags, filters, options)', () => {
-    });
-  });
-
-  describe('.producer', () => {
-    describe('()', () => {
-    });
-
-    describe('(flags, filters, options)', () => {
+    describe('(flags, filters, options)', function() {
     });
   });
 
-  describe('.character', () => {
-    describe('()', () => {
+  describe('.release', function() {
+    describe('()', function() {
     });
 
-    describe('(flags, filters, options)', () => {
-    });
-  });
-
-  describe('.user', () => {
-    describe('()', () => {
-    });
-
-    describe('(flags, filters, options)', () => {
+    describe('(flags, filters, options)', function() {
     });
   });
 
-  describe('.votelist', () => {
-    describe('()', () => {
+  describe('.producer', function() {
+    describe('()', function() {
     });
 
-    describe('(flags, filters, options)', () => {
-    });
-  });
-
-  describe('.vnlist', () => {
-    describe('()', () => {
-    });
-
-    describe('(flags, filters, options)', () => {
+    describe('(flags, filters, options)', function() {
     });
   });
 
-  describe('.wishlist', () => {
-    describe('()', () => {
+  describe('.character', function() {
+    describe('()', function() {
     });
 
-    describe('(flags, filters, options)', () => {
+    describe('(flags, filters, options)', function() {
+    });
+  });
+
+  describe('.user', function() {
+    describe('()', function() {
+    });
+
+    describe('(flags, filters, options)', function() {
+    });
+  });
+
+  describe('.votelist', function() {
+    describe('()', function() {
+    });
+
+    describe('(flags, filters, options)', function() {
+    });
+  });
+
+  describe('.vnlist', function() {
+    describe('()', function() {
+    });
+
+    describe('(flags, filters, options)', function() {
+    });
+  });
+
+  describe('.wishlist', function() {
+    describe('()', function() {
+    });
+
+    describe('(flags, filters, options)', function() {
     });
   });
 });

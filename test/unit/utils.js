@@ -11,20 +11,23 @@ describe('Utils', () => {
     });
 
     describe('when promise.resolve is called', () => {
-      it('should resolve the promise', function(done) {
+      it('should resolve the promise', function* () {
         const promise = createDeferredPromise();
         promise.resolve('something');
-        expect(promise).to.eventually.equal('something')
-          .and.notify(done);
+        const result = yield promise;
+
+        expect(result).to.equal('something');
       });
     });
 
     describe('when promise.reject is called', () => {
-      it('should reject the promise', function(done) {
+      it('should reject the promise', function* () {
         const promise = createDeferredPromise();
-        promise.reject('something else');
-        expect(promise).to.eventually.rejectedWith('something else')
-          .and.notify(done);
+        promise.reject(new Error('something else'));
+        const error = yield this.catchError(promise);
+
+        expect(error).to.be.an.instanceof(Error)
+          .with.property('message', 'something else');
       });
     });
   });

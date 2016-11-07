@@ -151,9 +151,9 @@ describe('VNDBClient', function() {
 
           testCommonBehavior();
 
-          it('should resolve final response as utf8 string without the terminator', function(done) {
-            expect(this.promise).to.eventually.equal('waiting for nothing')
-              .and.notify(done);
+          it('should resolve final response as utf8 string without the terminator', function* () {
+            const result = yield this.promise;
+            expect(result).to.equal('waiting for nothing');
           });
         });
 
@@ -166,9 +166,10 @@ describe('VNDBClient', function() {
 
           testCommonBehavior();
 
-          it('should rejects the final response as a VNDBError obejct', function(done) {
-            expect(this.promise).to.eventually.rejectedWith(VNDBError, 'parse error')
-              .and.notify(done);
+          it('should rejects the final response as a VNDBError object', function* () {
+            const error = yield this.catchError(this.promise);
+
+            expect(error).to.be.an.instanceof(VNDBError);
           });
         });
       });
@@ -199,10 +200,10 @@ describe('VNDBClient', function() {
           this.client.queues = generateQueue(0);
         });
 
-        it('should resolve undefined', function(done) {
-          const result = this.client.exec();
-          expect(result).to.eventually.equal(undefined)
-            .and.notify(done);
+        it('should resolve undefined', function* () {
+          const result = yield this.client.exec();
+
+          expect(result).to.equal(undefined);
         });
 
         it('should not call .write', function() {
@@ -305,10 +306,10 @@ describe('VNDBClient', function() {
           });
 
           describe('and no items left in client queues', function() {
-            it('should resolve undefined', function() {
+            it('should resolve undefined', function* () {
               this.client.queues = generateQueue(0);
-              const promise = this.client.exec();
-              expect(promise).to.eventually.equal(undefined);
+              const result = yield this.client.exec();
+              expect(result).to.equal(undefined);
             });
           });
         }
@@ -344,10 +345,11 @@ describe('VNDBClient', function() {
             this.client.write.resolves('write result');
           });
 
-          it('should pipe the result into the processed item\'s promise.resolve', function(done) {
+          it('should pipe the result into the processed item\'s promise.resolve', function* () {
             this.client.exec();
-            expect(this.itemToExec.promise).to.eventually.equal('write result')
-              .and.notify(done);
+            const result = yield this.itemToExec.promise;
+
+            expect(result).to.equal('write result');
           });
 
           it('should call itself to process next message', function() {
@@ -363,10 +365,11 @@ describe('VNDBClient', function() {
             this.client.write.rejects('something wrong');
           });
 
-          it('should pipe the result into the processed item\'s promise.reject', function(done) {
-            const promise = this.client.exec();
-            expect(promise).to.eventually.rejectedWith('something wrong')
-              .and.notify(done);
+          it('should pipe the result into the processed item\'s promise.reject', function* () {
+            const error = yield this.catchError(this.client.exec());
+
+            expect(error).to.be.an.instanceof(Error)
+              .with.property('message', 'something wrong');
           });
 
           it('should call itself to process next message', function() {
@@ -396,16 +399,14 @@ describe('VNDBClient', function() {
         });
       });
 
-      it('should login without username and password', function(done) {
-        this.client.connect();
+      it('should login without username and password', function* () {
+        this.client.exec.resolves();
+        yield this.client.connect();
 
-        setTimeout(() => {
-          expect(this.client.write).not.to.have.been.calledWithMatch(
-            sinon.match(/"username":"testuser"/));
-          expect(this.client.write).not.to.have.been.calledWithMatch(
-            sinon.match(/"password":"testpass"/));
-          done();
-        });
+        expect(this.client.write).not.to.have.been.calledWithMatch(
+          sinon.match(/"username":"testuser"/));
+        expect(this.client.write).not.to.have.been.calledWithMatch(
+          sinon.match(/"password":"testpass"/));
       });
     });
 
@@ -422,16 +423,14 @@ describe('VNDBClient', function() {
         });
       });
 
-      it('should login with provided username and password', function(done) {
-        this.client.connect('testname', 'testpass');
+      it('should login with provided username and password', function* () {
+        this.client.exec.resolves();
+        yield this.client.connect('testname', 'testpass');
 
-        setTimeout(() => {
-          expect(this.client.write).to.have.been.calledWithMatch(
-            sinon.match(/"username":"testname"/));
-          expect(this.client.write).to.have.been.calledWithMatch(
-            sinon.match(/"password":"testpass"/));
-          done();
-        });
+        expect(this.client.write).to.have.been.calledWithMatch(
+          sinon.match(/"username":"testname"/));
+        expect(this.client.write).to.have.been.calledWithMatch(
+          sinon.match(/"password":"testpass"/));
       });
     });
 
@@ -445,39 +444,38 @@ describe('VNDBClient', function() {
       });
 
       describe('failed to connect with tls', function() {
-        it('should reject an Error', function() {
+        it('should reject an Error', function* () {
           this.stubConnect(false);
-          const promise = this.client.connect();
+          const error = yield this.catchError(this.client.connect());
 
-          expect(promise).to.eventually.rejectedWith(Error);
+          expect(error).to.be.an.instanceof(Error);
         });
       });
 
       describe('failed to login with VNDB API', function() {
-        it('should reject an Error', function(done) {
+        it('should reject an Error', function* () {
           this.stubLogin(false);
-          const promise = this.client.connect();
+          const error = yield this.catchError(this.client.connect());
 
-          expect(promise).to.eventually.rejectedWith(VNDBError)
-            .and.notify(done);
+          expect(error).to.be.an.instanceof(VNDBError);
         });
       });
 
       describe('succeed to login with VNDB API', function() {
-        it('should resolve undefined', function() {
-          this.stubLogin(true);
-          const promise = this.client.connect();
-          expect(promise).to.eventually.equal(undefined);
-        });
-
-        it('should also start executing any queued messages', function(done) {
+        it('should resolve undefined', function* () {
           this.stubLogin(true);
           this.client.exec.resolves();
-          this.client.connect().then(() => {
-            expect(this.client.exec).to.have.been.called;
-            expect(this.client.exec).to.have.been.calledWith();
-            done();
-          });
+          const result = yield this.client.connect();
+          expect(result).to.equal(undefined);
+        });
+
+        it('should also start executing any queued messages', function* () {
+          this.stubLogin(true);
+          this.client.exec.resolves();
+          yield this.client.connect();
+
+          expect(this.client.exec).to.have.been.called;
+          expect(this.client.exec).to.have.been.calledWith();
         });
       });
 
@@ -497,30 +495,29 @@ describe('VNDBClient', function() {
           return `login ${JSON.stringify(loginBody)}`;
         }
 
-        function testConnect(client, done, ...args) {
-          client.connect(...args);
+        function* testConnect(client, ...args) {
           const loginMessage = getLoginMessage(...args);
-          setTimeout(() => {
-            expect(client.write).to.have.been.calledWith(loginMessage);
-            done();
-          });
+          client.exec.resolves();
+          yield client.connect(...args);
+
+          expect(client.write).to.have.been.calledWith(loginMessage);
         }
 
         describe('with just default values (no override)', function() {
-          it('should parse correctly', function(done) {
-            testConnect(this.client, done);
+          it('should parse correctly', function* () {
+            yield testConnect(this.client);
           });
         });
 
         describe('with providing username and password', function() {
-          it('should parse correctly', function(done) {
-            testConnect(this.client, done, 'testuser', 'testparams');
+          it('should parse correctly', function* () {
+            yield testConnect(this.client, 'testuser', 'testparams');
           });
         });
 
         describe('with overriding config', function() {
-          it('should parse correctly', function(done) {
-            testConnect(this.client, done, null, null, {
+          it('should parse correctly', function* () {
+            yield testConnect(this.client, null, null, {
               client: 'test.com',
               clientver: 1,
             });
@@ -528,8 +525,8 @@ describe('VNDBClient', function() {
         });
 
         describe('with username, password, and override config', function() {
-          it('should parse correctly', function(done) {
-            testConnect(this.client, done, 'testuser', 'testparams', {
+          it('should parse correctly', function* () {
+            yield testConnect(this.client, 'testuser', 'testparams', {
               client: 'test.com',
               clientver: 1,
             });
@@ -552,21 +549,19 @@ describe('VNDBClient', function() {
     });
 
     describe('when end is successful', function() {
-      it('should resolve undefined', function(done) {
-        const promise = this.client.end();
+      it('should resolve undefined', function* () {
+        const result = yield this.client.end();
 
-        expect(promise).to.eventually.equal(undefined)
-          .and.notify(done);
+        expect(result).to.equal(undefined);
       });
     });
 
     describe('when end is not successful', function() {
-      it('should resolve undefined', function(done) {
+      it('should resolve undefined', function* () {
         this.stubSocket(false);
-        const promise = this.client.end();
+        const error = yield this.catchError(this.client.end());
 
-        expect(promise).to.eventually.rejectedWith(Error)
-          .and.notify(done);
+        expect(error).to.be.an.instanceof(Error);
       });
     });
   });
@@ -583,11 +578,11 @@ describe('VNDBClient', function() {
     });
 
     describe('when exec is successful', function() {
-      it('should resolve the response as correct object', function() {
+      it('should resolve the response as correct object', function* () {
         this.client.exec.resolves('dbstats {"users":1000,"vn":2000}');
-        const promise = this.client.dbstats();
+        const result = yield this.client.dbstats();
 
-        expect(promise).to.eventually.deep.equal({
+        expect(result).to.deep.equal({
           type: 'dbstats',
           data: {
             users: 1000,
@@ -598,11 +593,11 @@ describe('VNDBClient', function() {
     });
 
     describe('when exec is failed', function() {
-      it('should rejects the error', function() {
+      it('should rejects the error', function* () {
         this.client.exec.rejects(new VNDBError());
-        const promise = this.client.dbstats();
+        const error = yield this.catchError(this.client.dbstats());
 
-        expect(promise).to.eventually.rejectedWith(VNDBError);
+        expect(error).to.be.an.instanceof(VNDBError);
       });
     });
   });

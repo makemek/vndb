@@ -11,6 +11,30 @@ describe('VNDBClient', function() {
   beforeEach(function() {
     this.client = new VNDBClient();
 
+    // Helper to stub client socket that is usually created with tls.connect.
+    this.stubSocket = (isEndSuccessful) => {
+      this.client.socket = new EventEmitter();
+      this.client.socket.connecting = false;
+      this.client.socket.write = this.sandbox.stub();
+      this.client.socket.end = () => {};
+      this.sandbox.stub(this.client.socket, 'end', () => {
+        const emitEvent = isEndSuccessful ?
+          () => this.client.socket.emit('end') :
+          () => this.client.socket.emit('error', new Error());
+        setTimeout(emitEvent);
+      });
+    };
+
+    // Helper to stub client write function
+    this.stubWrite = () => {
+      this.client.write = this.sandbox.stub().returns(new Promise(() => {}));
+    };
+
+    // Helper to stub client exec function
+    this.stubExec = () => {
+      this.client.exec = this.sandbox.stub().returns(new Promise(() => {}));
+    };
+
     // Helper to stub tls.connect
     this.stubConnect = (isSuccessful) => {
       if (tls.connect.restore) tls.connect.restore();
@@ -23,6 +47,19 @@ describe('VNDBClient', function() {
         setTimeout(() => socket.emit(eventName, new Error()));
 
         return socket;
+      });
+    };
+
+    // Helper to stub login execution
+    this.stubLogin = (isSuccessful) => {
+      if (this.client.write.restore) this.client.write.restore();
+      this.sandbox.stub(this.client, 'write', () => {
+        const promise = new Promise((resolve, reject) => {
+          if (isSuccessful) resolve();
+          else reject(new VNDBError('generic', 'something happened'));
+        });
+        promise.catch(e => e);
+        return promise;
       });
     };
 
@@ -70,8 +107,7 @@ describe('VNDBClient', function() {
     });
 
     beforeEach(function() {
-      this.client.socket = new EventEmitter();
-      this.client.socket.write = this.sandbox.stub();
+      this.stubSocket();
       this.promise = this.client.write('a message');
     });
 
@@ -142,9 +178,8 @@ describe('VNDBClient', function() {
   describe('.exec', function() {
     beforeEach(function() {
       this.client.bufferedResponse = null;
-      this.client.socket = new EventEmitter();
-      this.client.socket.connecting = false;
-      this.client.write = this.sandbox.stub().returns(new Promise(() => {}));
+      this.stubSocket();
+      this.stubWrite();
     });
 
     // A helper to generate this.client.queues randomly,
@@ -347,22 +382,7 @@ describe('VNDBClient', function() {
 
   describe('.connect', function() {
     beforeEach(function() {
-      this.client.exec = this.sandbox.stub();
-
-      // Helper to stub login execution
-      this.stubLogin = (isSuccessful) => {
-        if (this.client.write.restore) this.client.write.restore();
-        this.sandbox.stub(this.client, 'write', () => {
-          const promise = new Promise((resolve, reject) => {
-            if (isSuccessful) resolve();
-            else reject(new VNDBError('generic', 'something happened'));
-          });
-          promise.catch(e => e);
-          return promise;
-        });
-      };
-
-      // Stub with successful login by default
+      this.stubExec();
       this.stubLogin(true);
     });
 
@@ -452,6 +472,7 @@ describe('VNDBClient', function() {
 
         it('should also start executing any queued messages', function(done) {
           this.stubLogin(true);
+          this.client.exec.resolves();
           this.client.connect().then(() => {
             expect(this.client.exec).to.have.been.called;
             expect(this.client.exec).to.have.been.calledWith();
@@ -520,19 +541,8 @@ describe('VNDBClient', function() {
 
   describe('.end()', function() {
     beforeEach(function() {
-      this.stubEnd = (isSuccessful) => {
-        this.client.socket = new EventEmitter();
-        this.client.socket.end = () => {};
-        this.sandbox.stub(this.client.socket, 'end', () => {
-          const emitEvent = isSuccessful ?
-            () => this.client.socket.emit('end') :
-            () => this.client.socket.emit('error', new Error());
-          setTimeout(emitEvent);
-        });
-      };
-
       // Defaults to successful end
-      this.stubEnd(true);
+      this.stubSocket(true);
     });
 
     it('should end the socket', function() {
@@ -552,7 +562,7 @@ describe('VNDBClient', function() {
 
     describe('when end is not successful', function() {
       it('should resolve undefined', function(done) {
-        this.stubEnd(false);
+        this.stubSocket(false);
         const promise = this.client.end();
 
         expect(promise).to.eventually.rejectedWith(Error)
@@ -563,8 +573,7 @@ describe('VNDBClient', function() {
 
   describe('.dbstats()', function() {
     beforeEach(function() {
-      this.sandbox.stub(this.client, 'exec')
-        .returns(new Promise(() => {}));
+      this.stubExec();
     });
 
     it('should execute correct message', function() {

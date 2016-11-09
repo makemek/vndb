@@ -17,6 +17,7 @@ describe('VNDBClient', function() {
       this.client.socket.connecting = false;
       this.client.socket.write = this.sandbox.stub();
       this.client.socket.end = this.sandbox.stub();
+      return this.client.socket;
     };
 
     // Helper to stub client write function
@@ -30,36 +31,13 @@ describe('VNDBClient', function() {
     };
 
     // Helper to stub tls.connect
-    this.stubConnect = (isSuccessful) => {
-      if (tls.connect.restore) tls.connect.restore();
-      this.sandbox.stub(tls, 'connect', () => {
-        const socket = new EventEmitter();
-        const eventName = isSuccessful ? 'connect' : 'error';
-
-        // Emit process/error on next cycle,
-        // So that the client has a chance to register their handlers to the socket.
-        setTimeout(() => socket.emit(eventName, new Error()));
-
-        return socket;
-      });
-    };
-
-    // Helper to stub login execution
-    this.stubLogin = (isSuccessful) => {
-      if (this.client.write.restore) this.client.write.restore();
-      this.sandbox.stub(this.client, 'write', () => {
-        const promise = new Promise((resolve, reject) => {
-          if (isSuccessful) resolve();
-          else reject(new VNDBError('generic', 'something happened'));
-        });
-        promise.catch(e => e);
-        return promise;
-      });
+    this.stubConnect = () => {
+      tls.connect = this.sandbox.stub();
     };
 
     // Stub tls connect by default
     // To prevent real call to VNDB API.
-    this.stubConnect(true);
+    this.stubConnect();
   });
 
   describe('constructor', function() {
@@ -410,7 +388,12 @@ describe('VNDBClient', function() {
   describe('.connect', function() {
     beforeEach(function() {
       this.stubExec();
-      this.stubLogin(true);
+      this.stubWrite();
+
+      // Make tls.connect always returns a fake socket.
+      const socket = this.stubSocket();
+      tls.connect.returns(socket);
+      this.client.socket = null;
     });
 
     describe('()', function() {
@@ -423,9 +406,11 @@ describe('VNDBClient', function() {
         });
       });
 
-      it('should login without username and password', function* () {
+      it('should login without username and password', function () {
+        this.client.connect();
         this.client.exec.resolves();
-        yield this.client.connect();
+
+        this.client.socket.emit('connect');
 
         expect(this.client.write).not.to.have.been.calledWithMatch(
           sinon.match(/"username":"testuser"/));
@@ -448,8 +433,10 @@ describe('VNDBClient', function() {
       });
 
       it('should login with provided username and password', function* () {
+        this.client.connect('testname', 'testpass');
         this.client.exec.resolves();
-        yield this.client.connect('testname', 'testpass');
+
+        this.client.socket.emit('connect');
 
         expect(this.client.write).to.have.been.calledWithMatch(
           sinon.match(/"username":"testname"/));
@@ -461,7 +448,7 @@ describe('VNDBClient', function() {
     describe('all args', function() {
       describe('client is already connected', function() {
         it('should throw error', function() {
-          this.client.socket = new EventEmitter();
+          this.stubSocket();
 
           expect(this.client.connect).to.throw(Error);
         });
@@ -469,8 +456,10 @@ describe('VNDBClient', function() {
 
       describe('failed to connect with tls', function() {
         it('should reject an Error', function* () {
-          this.stubConnect(false);
-          const error = yield this.catchError(this.client.connect());
+          const promise = this.client.connect();
+          this.client.socket.emit('error', new Error());
+
+          const error = yield this.catchError(promise);
 
           expect(error).to.be.an.instanceof(Error);
         });
@@ -478,25 +467,34 @@ describe('VNDBClient', function() {
 
       describe('failed to login with VNDB API', function() {
         it('should reject an Error', function* () {
-          this.stubLogin(false);
-          const error = yield this.catchError(this.client.connect());
+          const promise = this.client.connect();
+          this.client.write.rejects(new VNDBError());
+          this.client.socket.emit('connect');
+
+          const error = yield this.catchError(promise);
 
           expect(error).to.be.an.instanceof(VNDBError);
         });
       });
 
       describe('succeed to login with VNDB API', function() {
+        beforeEach(function() {
+          this.makeSuccessfulLogin = () => {
+            const promise = this.client.connect();
+            this.client.write.resolves();
+            this.client.exec.resolves();
+            this.client.socket.emit('connect');
+            return promise;
+          };
+        });
         it('should resolve undefined', function* () {
-          this.stubLogin(true);
-          this.client.exec.resolves();
-          const result = yield this.client.connect();
+          const result = yield this.makeSuccessfulLogin();
+
           expect(result).to.equal(undefined);
         });
 
         it('should also start executing any queued messages', function* () {
-          this.stubLogin(true);
-          this.client.exec.resolves();
-          yield this.client.connect();
+          yield this.makeSuccessfulLogin();
 
           expect(this.client.exec).to.have.been.called;
           expect(this.client.exec).to.have.been.calledWith();
@@ -521,8 +519,8 @@ describe('VNDBClient', function() {
 
         function* testConnect(client, ...args) {
           const loginMessage = getLoginMessage(...args);
-          client.exec.resolves();
-          yield client.connect(...args);
+          client.connect(...args);
+          client.socket.emit('connect');
 
           expect(client.write).to.have.been.calledWith(loginMessage);
         }

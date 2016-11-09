@@ -12,17 +12,11 @@ describe('VNDBClient', function() {
     this.client = new VNDBClient();
 
     // Helper to stub client socket that is usually created with tls.connect.
-    this.stubSocket = (isEndSuccessful) => {
+    this.stubSocket = () => {
       this.client.socket = new EventEmitter();
       this.client.socket.connecting = false;
       this.client.socket.write = this.sandbox.stub();
-      this.client.socket.end = () => {};
-      this.sandbox.stub(this.client.socket, 'end', () => {
-        const emitEvent = isEndSuccessful ?
-          () => this.client.socket.emit('end') :
-          () => this.client.socket.emit('error', new Error());
-        setTimeout(emitEvent);
-      });
+      this.client.socket.end = this.sandbox.stub();
     };
 
     // Helper to stub client write function
@@ -569,7 +563,7 @@ describe('VNDBClient', function() {
   describe('.end()', function() {
     beforeEach(function() {
       // Defaults to successful end
-      this.stubSocket(true);
+      this.stubSocket();
     });
 
     it('should end the socket', function() {
@@ -580,7 +574,10 @@ describe('VNDBClient', function() {
 
     describe('when end is successful', function() {
       it('should resolve undefined', function* () {
-        const result = yield this.client.end();
+        const promise = this.client.end();
+        this.client.socket.emit('end');
+
+        const result = yield promise;
 
         expect(result).to.equal(undefined);
       });
@@ -588,10 +585,12 @@ describe('VNDBClient', function() {
 
     describe('when end is not successful', function() {
       it('should resolve undefined', function* () {
-        this.stubSocket(false);
-        const error = yield this.catchError(this.client.end());
+        const promise = this.client.end();
+        this.client.socket.emit('error', new VNDBError());
 
-        expect(error).to.be.an.instanceof(Error);
+        const error = yield this.catchError(promise);
+
+        expect(error).to.be.an.instanceof(VNDBError);
       });
     });
   });

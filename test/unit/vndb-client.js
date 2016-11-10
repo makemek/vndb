@@ -432,7 +432,7 @@ describe('VNDBClient', function() {
         });
       });
 
-      it('should login with provided username and password', function* () {
+      it('should login with provided username and password', function () {
         this.client.connect('testname', 'testpass');
         this.client.exec.resolves();
 
@@ -517,7 +517,7 @@ describe('VNDBClient', function() {
           return `login ${JSON.stringify(loginBody)}`;
         }
 
-        function* testConnect(client, ...args) {
+        function testConnect(client, ...args) {
           const loginMessage = getLoginMessage(...args);
           client.connect(...args);
           client.socket.emit('connect');

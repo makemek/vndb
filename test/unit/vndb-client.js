@@ -632,10 +632,100 @@ describe('VNDBClient', function() {
   });
 
   describe('.get', function() {
+    beforeEach(function() {
+      this.stubExec();
+    });
+
+    it('should execute correct message', function() {
+      this.client.get('vn');
+
+      expect(this.client.exec).to.have.been.calledWithMatch(/^get/);
+    });
+
+    describe('()', function() {
+      it('should throws an Error', function() {
+        expect(this.client.get.bind(this.client))
+          .to.throw(Error);
+      });
+    });
+
     describe('(type)', function() {
+      it('should parse type correctly', function() {
+        this.client.get('vn');
+
+        expect(this.client.exec).to.have.been.calledWithMatch(/^get vn/);
+      });
+    });
+
+    describe('(type, flags)', function() {
+      it('should parse flags correctly', function() {
+        this.client.get('vn', ['flag1', 'flag2']);
+
+        expect(this.client.exec).to.have.been.calledWithMatch(/^get vn flag1,flag2/);
+      });
+    });
+
+    describe('(type, flags, filters)', function() {
+      it('should parse filters correctly', function() {
+        this.client.get('vn', ['flag1', 'flag2'], '(id = 1)');
+
+        expect(this.client.exec).to.have.been.calledWithMatch(/^get vn flag1,flag2 \(id=1\)/);
+      });
     });
 
     describe('(type, flags, filters, options)', function() {
+      it('should parse options correctly', function() {
+        const options = {
+          page: 1,
+          results: 10,
+          sort: 'title',
+          reverse: true,
+        };
+        const testRegex = new RegExp(`^get vn flag1,flag2 (id=1) ${JSON.stringify(options)}`);
+
+        this.client.get('vn', ['flag1', 'flag2'], '(id = 1)', options);
+
+        expect(this.client.exec).to.have.been.calledWithMatch(testRegex);
+      });
+
+      it('should not parse unsupported option', function() {
+        const options = {
+          page: 1,
+          invalid: true,
+          sort: 'title',
+        };
+
+        this.client.get('vn', ['flag1', 'flag2'], '(id = 1)', options);
+
+        expect(this.client.exec).not.to.have.been.calledWithMatch(/invalid/);
+      });
+    });
+
+    describe('when exec is successful', function() {
+      it('should resolve the response as correct object', function* () {
+        this.client.exec.resolves('results {"num": 0,"more": false, "items":[]}');
+
+        const result = yield this.client.get('vn');
+
+        expect(result).to.deep.equal({
+          type: 'results',
+          data: {
+            num: 0,
+            more: false,
+            items: [],
+          },
+        });
+      });
+    });
+
+    describe('when exec is failed', function() {
+      it('should rejects the error', function* () {
+        this.client.exec.rejects(new VNDBError());
+
+        const error = yield this.catchError(this.client.get('vn'));
+
+        expect(error).to.be.an.instanceof(VNDBError);
+      });
     });
   });
 

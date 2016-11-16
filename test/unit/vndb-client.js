@@ -527,19 +527,19 @@ describe('VNDBClient', function() {
 
         describe('with just default values (no override)', function() {
           it('should parse correctly', function* () {
-            yield testConnect(this.client);
+            testConnect(this.client);
           });
         });
 
         describe('with providing username and password', function() {
           it('should parse correctly', function* () {
-            yield testConnect(this.client, 'testuser', 'testparams');
+            testConnect(this.client, 'testuser', 'testparams');
           });
         });
 
         describe('with overriding config', function() {
           it('should parse correctly', function* () {
-            yield testConnect(this.client, null, null, {
+            testConnect(this.client, null, null, {
               client: 'test.com',
               clientver: 1,
             });
@@ -548,7 +548,7 @@ describe('VNDBClient', function() {
 
         describe('with username, password, and override config', function() {
           it('should parse correctly', function* () {
-            yield testConnect(this.client, 'testuser', 'testparams', {
+            testConnect(this.client, 'testuser', 'testparams', {
               client: 'test.com',
               clientver: 1,
             });

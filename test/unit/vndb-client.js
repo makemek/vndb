@@ -636,12 +636,6 @@ describe('VNDBClient', function() {
       this.stubExec();
     });
 
-    it('should execute correct message', function() {
-      this.client.get('vn');
-
-      expect(this.client.exec).to.have.been.calledWithMatch(/^get/);
-    });
-
     describe('()', function() {
       it('should throws an Error', function() {
         expect(this.client.get.bind(this.client))
@@ -650,23 +644,21 @@ describe('VNDBClient', function() {
     });
 
     describe('(type)', function() {
-      it('should parse type correctly', function() {
-        this.client.get('vn');
-
-        expect(this.client.exec).to.have.been.calledWithMatch(/^get vn/);
+      it('should throw an Error', function() {
+        expect(this.client.get.bind(this.client, 'vn'))
+          .to.throw(Error);
       });
     });
 
     describe('(type, flags)', function() {
-      it('should parse flags correctly', function() {
-        this.client.get('vn', ['flag1', 'flag2']);
-
-        expect(this.client.exec).to.have.been.calledWithMatch(/^get vn flag1,flag2/);
+      it('should throw an Error', function() {
+        expect(this.client.get.bind(this.client, 'vn', ['flag1', 'flag2']))
+          .to.throw(Error);
       });
     });
 
     describe('(type, flags, filters)', function() {
-      it('should parse filters correctly', function() {
+      it('should parse everything correctly', function() {
         this.client.get('vn', ['flag1', 'flag2'], '(id = 1)');
 
         expect(this.client.exec).to.have.been.calledWithMatch(/^get vn flag1,flag2 \(id = 1\)/);
@@ -707,7 +699,7 @@ describe('VNDBClient', function() {
       it('should resolve the response as correct object', function* () {
         this.client.exec.resolves('results {"num": 0,"more": false, "items":[]}');
 
-        const result = yield this.client.get('vn');
+        const result = yield this.client.get('vn', ['basic'], '(id = 1)');
 
         expect(result).to.deep.equal({
           type: 'results',
@@ -724,7 +716,7 @@ describe('VNDBClient', function() {
       it('should rejects the error', function* () {
         this.client.exec.rejects(new VNDBError());
 
-        const error = yield this.catchError(this.client.get('vn'));
+        const error = yield this.catchError(this.client.get('vn', ['basic'], '(id = 1)'));
 
         expect(error).to.be.an.instanceof(VNDBError);
       });

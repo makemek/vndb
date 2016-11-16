@@ -665,7 +665,7 @@ describe('VNDBClient', function() {
       it('should parse everything correctly', function() {
         this.client.get('vn', ['flag1', 'flag2'], '(id = 1)');
 
-        expect(this.client.exec).to.have.been.calledWithMatch(/^get vn flag1,flag2 \(id = 1\)/);
+        expect(this.client.exec).to.have.been.calledWithMatch(/^get vn flag1,flag2 \(id = 1\)$/);
       });
     });
 

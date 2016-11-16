@@ -32,6 +32,10 @@ describe('VNDB constants', () => {
     it('should have terminator', () => {
       expect(VNDBConstants).to.have.deep.property('terminator');
     });
+
+    it('should contain list of allowed options', () => {
+      expect(VNDBConstants).to.have.deep.property('allowedOptions');
+    });
   });
 });
 

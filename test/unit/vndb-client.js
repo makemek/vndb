@@ -669,7 +669,7 @@ describe('VNDBClient', function() {
       it('should parse filters correctly', function() {
         this.client.get('vn', ['flag1', 'flag2'], '(id = 1)');
 
-        expect(this.client.exec).to.have.been.calledWithMatch(/^get vn flag1,flag2 \(id=1\)/);
+        expect(this.client.exec).to.have.been.calledWithMatch(/^get vn flag1,flag2 \(id = 1\)/);
       });
     });
 
@@ -681,11 +681,13 @@ describe('VNDBClient', function() {
           sort: 'title',
           reverse: true,
         };
-        const testRegex = new RegExp(`^get vn flag1,flag2 (id=1) ${JSON.stringify(options)}`);
 
         this.client.get('vn', ['flag1', 'flag2'], '(id = 1)', options);
 
-        expect(this.client.exec).to.have.been.calledWithMatch(testRegex);
+        expect(this.client.exec).to.have.been.calledWithMatch(/"page":1/);
+        expect(this.client.exec).to.have.been.calledWithMatch(/"results":10/);
+        expect(this.client.exec).to.have.been.calledWithMatch(/"sort":"title"/);
+        expect(this.client.exec).to.have.been.calledWithMatch(/"reverse":true/);
       });
 
       it('should not parse unsupported option', function() {

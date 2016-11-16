@@ -30,6 +30,10 @@ describe('VNDBClient', function() {
       this.client.exec = this.sandbox.stub().returns(new Promise(() => {}));
     };
 
+    this.stubGet = () => {
+      this.client.get = this.sandbox.stub().returns(new Promise(() => {}));
+    };
+
     // Helper to stub tls.connect
     this.stubConnect = () => {
       tls.connect = this.sandbox.stub();
@@ -724,10 +728,39 @@ describe('VNDBClient', function() {
   });
 
   describe('.vn', function() {
+    beforeEach(function() {
+      this.stubGet();
+    });
+
     describe('()', function() {
+      it('should provide default arguments for get function', function() {
+        this.client.vn();
+
+        expect(this.client.get).to
+          .have.been.calledWith('vn', sinon.match.array, sinon.match.string);
+      });
     });
 
     describe('(flags, filters, options)', function() {
+      it('should use the provided arguments for get function', function() {
+        const args = [['basic'], '(id = 1)', { page: 1, results: 20 }];
+
+        this.client.vn(...args);
+
+        expect(this.client.get).to
+          .have.been.calledWith('vn', ...args);
+      });
+    });
+
+    describe('all args', function() {
+      it('should just return the promise provided by get function', function() {
+        const getPromise = new Promise(() => {});
+        this.client.get = this.sandbox.stub().returns(getPromise);
+
+        const result = this.client.vn();
+
+        expect(result).to.equal(getPromise);
+      });
     });
   });
 

@@ -28,6 +28,13 @@ describe('VNDB constants', () => {
     });
   });
 
+  describe('get parameter constants', () => {
+    it('should contain default parameters for vn function', () => {
+      expect(VNDBConstants).to.have.deep.property('defaults.vn.flags');
+      expect(VNDBConstants).to.have.deep.property('defaults.vn.filters');
+    });
+  });
+
   describe('Other constants', () => {
     it('should have terminator', () => {
       expect(VNDBConstants).to.have.deep.property('terminator');

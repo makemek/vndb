@@ -33,6 +33,42 @@ describe('VNDB constants', () => {
       expect(VNDBConstants).to.have.deep.property('defaults.vn.flags');
       expect(VNDBConstants).to.have.deep.property('defaults.vn.filters');
     });
+
+    it('should contain default parameters for release function', () => {
+      expect(VNDBConstants).to.have.deep.property('defaults.release.flags');
+      expect(VNDBConstants).to.have.deep.property('defaults.release.filters');
+    });
+
+    it('should contain default parameters for producer function', () => {
+      expect(VNDBConstants).to.have.deep.property('defaults.producer.flags');
+      expect(VNDBConstants).to.have.deep.property('defaults.producer.filters');
+    });
+
+    it('should contain default parameters for character function', () => {
+      expect(VNDBConstants).to.have.deep.property('defaults.character.flags');
+      expect(VNDBConstants).to.have.deep.property('defaults.character.filters');
+    });
+
+    it('should contain default parameters for user function', () => {
+      expect(VNDBConstants).to.have.deep.property('defaults.user.flags');
+      expect(VNDBConstants).to.have.deep.property('defaults.user.filters');
+    });
+
+    it('should contain default parameters for votelist function', () => {
+      expect(VNDBConstants).to.have.deep.property('defaults.votelist.flags');
+      expect(VNDBConstants).to.have.deep.property('defaults.votelist.filters');
+    });
+
+    it('should contain default parameters for vnlist function', () => {
+      expect(VNDBConstants).to.have.deep.property('defaults.vnlist.flags');
+      expect(VNDBConstants).to.have.deep.property('defaults.vnlist.filters');
+    });
+
+    it('should contain default parameters for wishlist function', () => {
+      expect(VNDBConstants).to.have.deep.property('defaults.wishlist.flags');
+      expect(VNDBConstants).to.have.deep.property('defaults.wishlist.filters');
+    });
+
   });
 
   describe('Other constants', () => {

@@ -773,59 +773,31 @@ describe('VNDBClient', function() {
   });
 
   describe('.release', function() {
-    describe('()', function() {
-    });
-
-    describe('(flags, filters, options)', function() {
-    });
+    testGet('release');
   });
 
   describe('.producer', function() {
-    describe('()', function() {
-    });
-
-    describe('(flags, filters, options)', function() {
-    });
+    testGet('producer');
   });
 
   describe('.character', function() {
-    describe('()', function() {
-    });
-
-    describe('(flags, filters, options)', function() {
-    });
+    testGet('character');
   });
 
   describe('.user', function() {
-    describe('()', function() {
-    });
-
-    describe('(flags, filters, options)', function() {
-    });
+    testGet('user');
   });
 
   describe('.votelist', function() {
-    describe('()', function() {
-    });
-
-    describe('(flags, filters, options)', function() {
-    });
+    testGet('votelist');
   });
 
   describe('.vnlist', function() {
-    describe('()', function() {
-    });
-
-    describe('(flags, filters, options)', function() {
-    });
+    testGet('vnlist');
   });
 
   describe('.wishlist', function() {
-    describe('()', function() {
-    });
-
-    describe('(flags, filters, options)', function() {
-    });
+    testGet('wishlist');
   });
 });
 

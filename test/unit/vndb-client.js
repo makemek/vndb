@@ -727,17 +727,21 @@ describe('VNDBClient', function() {
     });
   });
 
-  describe('.vn', function() {
+  /**
+   * Get command of any type usually has the exact same signature and return.
+   * What makes them different is only the type and the default values of other modifiers.
+   */
+  function testGet(type) {
     beforeEach(function() {
       this.stubGet();
     });
 
     describe('()', function() {
       it('should provide default arguments for get function', function() {
-        this.client.vn();
+        this.client[type]();
 
         expect(this.client.get).to
-          .have.been.calledWith('vn', sinon.match.array, sinon.match.string);
+          .have.been.calledWith(type, sinon.match.array, sinon.match.string);
       });
     });
 
@@ -745,10 +749,10 @@ describe('VNDBClient', function() {
       it('should use the provided arguments for get function', function() {
         const args = [['basic'], '(id = 1)', { page: 1, results: 20 }];
 
-        this.client.vn(...args);
+        this.client[type](...args);
 
         expect(this.client.get).to
-          .have.been.calledWith('vn', ...args);
+          .have.been.calledWith(type, ...args);
       });
     });
 
@@ -757,11 +761,15 @@ describe('VNDBClient', function() {
         const getPromise = new Promise(() => {});
         this.client.get = this.sandbox.stub().returns(getPromise);
 
-        const result = this.client.vn();
+        const result = this.client[type]();
 
         expect(result).to.equal(getPromise);
       });
     });
+  }
+
+  describe('.vn', function() {
+    testGet('vn');
   });
 
   describe('.release', function() {

@@ -3,9 +3,6 @@
   "version": "0.1.0",
   "description": "A wrapper for VNDB API",
   "main": "index.js",
-  "engines": {
-    "node": "^6.0.0"
-  },
   "dependencies": {},
   "devDependencies": {
     "chai": "^3.5.0",
